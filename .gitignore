@@ -1,0 +1,23 @@
+# Node
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+
+# Gemini / AI artifacts
+.gemini/
+.agent/
+! .agent/skills/
+! .agent/workflows/
+brain/
+*.log
+
+# Workspace
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MCP specific
+cookies.txt

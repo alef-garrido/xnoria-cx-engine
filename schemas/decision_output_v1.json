@@ -1,0 +1,50 @@
+{
+  "input_id": "string",
+  "channel": "email",
+
+  "comprehension": {
+    "is_understandable": true,
+    "notes": "string"
+  },
+
+  "relevance": {
+    "is_relevant": true,
+    "notes": "string"
+  },
+
+  "intent": {
+    "primary": "ASK_INFO | REQUEST_ACTION | SCHEDULE | COMPLAINT | SUPPORT | UNKNOWN",
+    "confidence": "low | medium | high"
+  },
+
+  "user_states": [
+    "CLEAR_INTENT",
+    "UNCLEAR_INTENT",
+    "EMOTIONAL",
+    "RISK_FLAG"
+  ],
+
+  "risk": {
+    "level": "NONE | LOW | MEDIUM | HIGH | CRITICAL",
+    "signals": ["string"]
+  },
+
+  "missing_information": [
+    "string"
+  ],
+
+  "decision": {
+    "primary_action": "REQUEST_MORE_INFO | PROVIDE_INFO | LOG_AND_ROUTE | SCHEDULE_REQUEST | ESCALATE_HUMAN | REJECT_REQUEST",
+    "secondary_actions": ["string"],
+    "reason": "string"
+  },
+
+  "constraints_applied": [
+    "string"
+  ],
+
+  "escalation": {
+    "required": true,
+    "reason": "string"
+  }
+}
