@@ -1,2 +1,0 @@
-k#!/bin/bash
-flatpak run com.google.Chrome "$@"
