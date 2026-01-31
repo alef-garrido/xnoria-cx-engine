@@ -1,11 +1,10 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://xnoria.dev/schemas/response_contract_v1.json",
   "title": "Response Contract v1",
   "description": "Canonical output contract produced by xnoria-cx-engine workflows. This contract defines the only externally exposed response shape.",
   "type": "object",
   "additionalProperties": false,
-
   "required": [
     "response_id",
     "timestamp",
@@ -13,30 +12,32 @@
     "final_action",
     "meta"
   ],
-
   "properties": {
     "response_id": {
       "type": "string",
       "description": "Unique identifier for this response instance."
     },
-
     "timestamp": {
       "type": "string",
       "format": "date-time",
       "description": "ISO-8601 timestamp indicating when the response was generated."
     },
-
     "channel": {
       "type": "string",
-      "enum": ["email", "chat", "webhook"],
+      "enum": [
+        "email",
+        "chat",
+        "webhook"
+      ],
       "description": "Target delivery channel for the response."
     },
-
     "final_action": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["type", "payload"],
-
+      "required": [
+        "type",
+        "payload"
+      ],
       "properties": {
         "type": {
           "type": "string",
@@ -49,57 +50,62 @@
           ],
           "description": "Canonical action command for consumers."
         },
-
         "payload": {
           "type": "object",
           "description": "Action-specific payload. Only relevant fields must be present.",
           "additionalProperties": false,
-
           "properties": {
             "message": {
               "type": "string",
               "description": "Human-readable message intended for the end user."
             },
-
             "missing_information": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "List of required information fields missing from the request."
             },
-
             "level": {
               "type": "string",
-              "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL"
+              ],
               "description": "Escalation severity level."
             },
-
             "reason": {
               "type": "string",
               "description": "Reason for escalation, rejection, or additional information request."
             },
-
             "signals": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Risk or escalation signals detected during decision-making."
             }
           }
         }
       }
     },
-
     "meta": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["version", "trace_id"],
-
+      "required": [
+        "version",
+        "trace_id"
+      ],
       "properties": {
         "version": {
           "type": "string",
-          "enum": ["v1"],
+          "enum": [
+            "v1"
+          ],
           "description": "Response contract version."
         },
-
         "trace_id": {
           "type": "string",
           "description": "Identifier used to correlate this response with internal decision traces."

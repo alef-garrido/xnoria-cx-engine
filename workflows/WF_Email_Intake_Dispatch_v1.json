@@ -1,5 +1,5 @@
 {
-  "name": "WF_Email_Intake_Dispatch_v1_MINIMAL",
+  "name": "WF_Email_Intake_Dispatch_v1",
   "nodes": [
     {
       "parameters": {
