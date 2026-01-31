@@ -1,5 +1,5 @@
 {
-  "name": "WF_Email_Intake_Dispatch_v1",
+  "name": "WF_Email_Intake_Dispatch_v1_MINIMAL",
   "nodes": [
     {
       "parameters": {
@@ -14,7 +14,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        0
+        32
       ],
       "webhookId": "5a0696ad-c849-4a0c-aec7-83fca28497ec"
     },
@@ -36,7 +36,7 @@
       "typeVersion": 2,
       "position": [
         256,
-        0
+        32
       ]
     },
     {
@@ -103,8 +103,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        576,
-        416
+        560,
+        480
       ]
     },
     {
@@ -137,8 +137,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        576,
-        208
+        560,
+        256
       ]
     },
     {
@@ -172,7 +172,7 @@
       "typeVersion": 2,
       "position": [
         560,
-        0
+        32
       ]
     },
     {
@@ -185,8 +185,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1008,
-        -416
+        1040,
+        -464
       ],
       "id": "892511b8-9e82-4d3f-bc7a-ef99a7c09149",
       "name": "Set_Critical_Escalation"
@@ -235,7 +235,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1008,
+        1040,
         -240
       ],
       "id": "5b01fe92-177c-4a68-992f-81b5508da35a",
@@ -251,8 +251,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        976,
-        400
+        1040,
+        432
       ],
       "id": "e2bc7722-46c3-4e98-a338-5cce584d35eb",
       "name": "Set_Provide_Info"
@@ -267,8 +267,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        976,
-        192
+        1040,
+        208
       ],
       "id": "18f9439f-4d5c-46e4-80e0-48da2485f013",
       "name": "Set_Request_More_Info"
@@ -283,8 +283,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        992,
-        -16
+        1040,
+        16
       ],
       "id": "84885094-b1b6-481c-9d43-9cce62708912",
       "name": "Set_Rejection"
@@ -306,8 +306,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1696,
-        -16
+        1680,
+        16
       ],
       "id": "3f015121-b279-417a-acf2-abad9bb48b43",
       "name": "Webhook_Response_Final"
@@ -315,14 +315,14 @@
     {
       "parameters": {
         "mode": "raw",
-        "jsonOutput": "={{\n  {\n    final_action: {\n      type: $json.type,\n      payload: $json.payload\n    }\n  }\n}}\n\n",
+        "jsonOutput": "=={{\n  {\n    response_id: $execution.id,\n    timestamp: new Date().toISOString(),\n    channel: $json.body.channel,\n    final_action: {\n      type: $json.type,\n      payload: $json.payload\n    },\n    meta: {\n      version: \"v1\",\n      trace_id: $json.body.input_id\n    }\n  }\n}}\n\n\n",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1424,
-        -16
+        1408,
+        16
       ],
       "id": "abc95e89-73bd-4783-9be3-6da958c2b3f2",
       "name": "Set_Final_Action_Wrapper"
@@ -506,7 +506,7 @@
     "executionOrder": "v1",
     "availableInMCP": false
   },
-  "versionId": "714a2aef-761f-4784-b17c-07a06d270ad2",
+  "versionId": "b29321f6-46cd-4773-982d-088d761b1b3f",
   "meta": {
     "instanceId": "673a645f397b99ca55a9ffe08da32efbeb167bac5b0fb505af985c363459f35b"
   },
