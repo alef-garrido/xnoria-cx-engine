@@ -1,0 +1,16 @@
+{
+    "active_notebooks": [
+        {
+            "title": "Context_Agnostic_Base_v1.0",
+            "id": "3ccf89ea-1b9b-41be-aeba-82950b0fbfc1",
+            "role": "base_instructions",
+            "url": "https://notebooklm.google.com/notebook/3ccf89ea-1b9b-41be-aeba-82950b0fbfc1"
+        },
+        {
+            "title": "Context_Clinic_Instance_v1.0",
+            "id": "d937b69e-a3a8-4df5-a4b3-f1681f8cd3da",
+            "role": "instance_data",
+            "url": "https://notebooklm.google.com/notebook/d937b69e-a3a8-4df5-a4b3-f1681f8cd3da"
+        }
+    ]
+}

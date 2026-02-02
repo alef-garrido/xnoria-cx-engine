@@ -7,9 +7,16 @@ dist/
 
 # Gemini / AI artifacts
 .gemini/
-.agent/
-! .agent/skills/
-! .agent/workflows/
+# Estado local del agente
+.agent/cache/
+.agent/runs/
+.agent/tmp/
+.agent/logs/
+
+# Credenciales
+.agent/.env
+.agent/secrets.yaml
+
 brain/
 *.log
 
