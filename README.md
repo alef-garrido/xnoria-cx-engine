@@ -44,5 +44,48 @@ The source of truth for all decision outputs, ensuring consistency across all au
 2. Import the workflows from the `workflows/` directory into your n8n instance.
 3. Configure your MCP-compatible AI agent (e.g. Antigravity) to load the skill located in `.agent/skills/decision_intake_email_v1`.
 
+## System Dependencies (Critical)
+
+This project relies on external systems that are NOT vendored in this repository.
+
+### 1. notebooklm-mcp-server (REQUIRED)
+
+The decision engine assumes the presence of a configured MCP tool that exposes
+NotebookLM contexts to Antigravity skills.
+
+Required contexts:
+
+| Context | Canonical ID | Source |
+|-------|-------------|--------|
+| Base Context | Context_Agnostic_Base_v1.0 | /docs/Context_Agnostic_Base_v1.0.md |
+| Clinic Context | Context_Clinic_Instance_v1.0 | /docs/Context_Clinic_Instance_v1.0.md |
+
+These contexts must be:
+- Ingested into NotebookLM
+- Exposed via notebooklm-mcp-server
+- Registered as an MCP tool in the Antigravity workspace
+
+⚠️ The skill DOES NOT read files directly. Grounding occurs via MCP.
+
+### 2. Gemini Workspace Configuration (Local)
+
+The following file is expected to exist locally but MUST NOT be committed:
+
+`/.agent/notebooks.json`
+
+This file should contain the NotebookLM notebook IDs used by the MCP server.
+
+Example (DO NOT COMMIT):
+
+```json
+{
+  "notebooks": {
+    "Context_Agnostic_Base_v1.0": "notebook_id_here",
+    "Context_Clinic_Instance_v1.0": "notebook_id_here"
+  }
+}
+```
+
+
 ## License
 This project is licensed under the terms included in the [LICENSE](LICENSE) file.
