@@ -1,0 +1,858 @@
+{
+  "name": "WF_Email_Decision_Engine_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "q": "category:primary is:unread"
+        }
+      },
+      "id": "gmail-trigger-id",
+      "name": "Gmail Trigger",
+      "position": [
+        112,
+        208
+      ],
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bO8BMLda4K6vPnAR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normalización Universal v3 (Gmail, Webhook, Manual)\nconst input = $json.body || $json; // Webhook usa .body, Triggers usan top-level\nconst snippet = input.snippet || input.textPlain || input.message || \"\";\nconst rawDate = input.internalDate || input.timestamp || Date.now();\nlet timestamp;\n\ntry {\n  if (typeof rawDate === 'string' && rawDate.includes('T')) {\n    timestamp = rawDate;\n  } else {\n    timestamp = new Date(parseInt(rawDate)).toISOString();\n  }\n} catch (e) {\n  timestamp = new Date().toISOString();\n}\n\nreturn {\n  json: {\n    input_id: \"id-\" + (input.id || input.messageId || Math.random().toString(36).substr(2, 9)),\n    channel: input.channel || \"email\",\n    message: snippet,\n    context_domain: \"clinic\",\n    metadata: {\n      from: input.From || input.from || \"unknown\",\n      subject: input.Subject || input.subject || \"Sin asunto\",\n      timestamp: timestamp,\n      original_message_id: input.id || input.messageId\n    }\n  }\n};"
+      },
+      "id": "normalization-id",
+      "name": "Normalización",
+      "position": [
+        304,
+        208
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message || \"No message content provided\" }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres el Email Decision Engine v1 de CX Engine Pro.\nTu objetivo es procesar inputs de emails y convertirlos en decisiones estructuradas siguiendo el \"Decision Contract v1\".\n\nPRINCIPIOS:\n1. DETERMINISMO: Mismos inputs = mismos outputs.\n2. ESTRUCTURA: Solo respondes en JSON válido. No incluyas texto fuera del JSON.\n3. GROUNDING: Utiliza la herramienta 'tyla_q' para buscar información del dominio 'clinic' si es necesario.\n4. RIESGO: Identifica niveles de riesgo (NONE, LOW, MEDIUM, HIGH, CRITICAL) y señales (signals). Riesgo >= HIGH bloquea automatización.\n\nJSON SCHEMA (Decision Contract v1):\n{\n  \"comprehension\": { \"is_understandable\": boolean, \"notes\": string },\n  \"relevance\": { \"is_relevant\": boolean, \"notes\": string },\n  \"intent\": { \"primary\": \"ASK_INFO\"|\"REQUEST_ACTION\"|\"SCHEDULE\"|\"COMPLAINT\"|\"SUPPORT\"|\"UNKNOWN\", \"confidence\": \"low\"|\"medium\"|\"high\" },\n  \"user_states\": [\"string\"],\n  \"risk\": { \"level\": \"NONE\"|\"LOW\"|\"MEDIUM\"|\"HIGH\"|\"CRITICAL\", \"signals\": [\"string\"] },\n  \"missing_information\": [\"string\"],\n  \"decision\": { \"primary_action\": \"REQUEST_MORE_INFO\"|\"PROVIDE_INFO\"|\"LOG_AND_ROUTE\"|\"SCHEDULE_REQUEST\"|\"ESCALATE_HUMAN\"|\"REJECT_REQUEST\", \"reason\": \"string\" },\n  \"constraints_applied\": [\"string\"],\n  \"escalation\": { \"required\": boolean, \"reason\": \"string\" }\n}\n\nREGLAS CRÍTICAS:\n- No inventes información. Si falta info, usa REQUEST_MORE_INFO.\n- Si el riesgo es médico o legal, escala (required: true).\n- El campo 'decision.reason' DEBE contener la respuesta textual final para el usuario si la acción es PROVIDE_INFO, o la explicación del error/falta de datos si es REQUEST_MORE_INFO o REJECT_REQUEST.\n- Sé profesional, empático y conciso. Usa el idioma del input (Español).\n- El campo 'comprehension.notes' se reserva para razonamiento interno técnico."
+        }
+      },
+      "id": "ai-agent-id",
+      "name": "AI Agent",
+      "position": [
+        512,
+        208
+      ],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 2048,
+          "temperature": 0,
+          "topP": 0.95
+        }
+      },
+      "id": "gemini-model-id",
+      "name": "Google Gemini Chat Model",
+      "position": [
+        480,
+        384
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qQa7yIdqaeanLyDO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Busca información relevante en documentos de conocimiento del dominio clínica. SOLO para grounding interno. NUNCA genera texto final para el usuario."
+      },
+      "id": "tyla-q-id",
+      "name": "tyla_q",
+      "position": [
+        496,
+        560
+      ],
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "demo-2026-clinic",
+          "mode": "list",
+          "cachedResultName": "demo-2026-clinic"
+        },
+        "options": {
+          "pineconeNamespace": "demo-n8n-clinic"
+        }
+      },
+      "id": "pinecone-id",
+      "name": "Pinecone Vector Store",
+      "position": [
+        368,
+        704
+      ],
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1,
+      "credentials": {
+        "pineconeApi": {
+          "id": "aFAFO7YjS0c1tSAL",
+          "name": "PineconeApi oa.garrido 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output.risk.level }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "CRITICAL",
+              "id": "condition-1771450618548-36u6yeomw"
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "if-critical-risk-id",
+      "name": "IF_Critical_Risk",
+      "position": [
+        1024,
+        32
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "onError": "stopWorklow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "ESCALATE_HUMAN"
+            },
+            {
+              "name": "payload.level",
+              "type": "string",
+              "value": "CRITICAL"
+            },
+            {
+              "name": "payload.reason",
+              "type": "string",
+              "value": "={{ $json.output.escalation.reason }}"
+            },
+            {
+              "name": "payload.signals",
+              "type": "array",
+              "value": "={{ $json.output.risk.signals }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-critical-escalation-id",
+      "name": "Set_Critical_Escalation",
+      "position": [
+        1232,
+        -32
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "ESCALATE_HUMAN"
+            },
+            {
+              "name": "payload.level",
+              "type": "string",
+              "value": "NORMAL"
+            },
+            {
+              "name": "payload.reason",
+              "type": "string",
+              "value": "={{ $json.output.escalation.reason || \"Escalación por ambigüedad o intención no resoluble automáticamente.\" }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-normal-escalation-id",
+      "name": "Set_Normal_Escalation",
+      "position": [
+        1232,
+        128
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "PROVIDE_INFO"
+            },
+            {
+              "name": "payload.message",
+              "type": "string",
+              "value": "={{ $json.output.decision.reason }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-provide-info-id",
+      "name": "Set_Provide_Info",
+      "position": [
+        1024,
+        256
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "REQUEST_MORE_INFO"
+            },
+            {
+              "name": "payload.missing_information",
+              "type": "array",
+              "value": "={{ $json.output.missing_information }}"
+            },
+            {
+              "name": "payload.reason",
+              "type": "string",
+              "value": "={{ $json.output.decision.reason }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-request-more-info-id",
+      "name": "Set_Request_More_Info",
+      "position": [
+        1024,
+        432
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "REJECT_REQUEST"
+            },
+            {
+              "name": "payload.reason",
+              "type": "string",
+              "value": "={{ $json.output.decision.reason }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-rejection-id",
+      "name": "Set_Rejection",
+      "position": [
+        1024,
+        608
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "channel",
+              "type": "string",
+              "value": "={{ $('Normalización').item.json.channel }}"
+            },
+            {
+              "name": "input_id",
+              "type": "string",
+              "value": "={{ $('Normalización').item.json.input_id }}"
+            },
+            {
+              "name": "final_action.type",
+              "type": "string",
+              "value": "={{ $json.type || \"UNKNOWN\" }}"
+            },
+            {
+              "name": "final_action.payload",
+              "type": "object",
+              "value": "={{ $json.payload || {} }}"
+            },
+            {
+              "name": "meta.version",
+              "type": "string",
+              "value": "v1"
+            },
+            {
+              "name": "meta.trace_id",
+              "type": "string",
+              "value": "={{ $('Normalización').item.json.input_id }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-final-wrapper-id",
+      "name": "Set_Final_Action_Wrapper",
+      "position": [
+        1488,
+        272
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "respond-to-webhook-id",
+      "name": "Webhook Response Final",
+      "position": [
+        1712,
+        272
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "fec08124-847c-475a-9dd3-b7e15b42c3c1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "email-decision-v1",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "21323d15-5b6b-4a02-a465-8726f514a092",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        400
+      ],
+      "webhookId": "e9f89871-4ab6-4889-bfb1-14772a1b1d1a"
+    },
+    {
+      "parameters": {
+        "content": "Multiple items will be returned if multiple messages are received within the polling interval. Make sure your workflow can handle multiple items.",
+        "height": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        16
+      ],
+      "typeVersion": 1,
+      "id": "bd4df446-1211-4a72-930c-ccb5aa1f7e2d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        656,
+        704
+      ],
+      "id": "22d97dc3-5531-488e-9f37-7cf8464b4d4a",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "XDfc4X8rB8p1afGf",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        864
+      ],
+      "id": "555c4e6b-1de4-4921-b6d6-9a6eac9d1307",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "qQa7yIdqaeanLyDO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"comprehension\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_understandable\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"relevance\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_relevant\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"intent\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary\": {\"type\": \"string\", \"enum\": [\"ASK_INFO\", \"REQUEST_ACTION\", \"SCHEDULE\", \"COMPLAINT\", \"SUPPORT\", \"UNKNOWN\"]},\n        \"confidence\": {\"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"]}\n      }\n    },\n    \"user_states\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"risk\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"level\": {\"type\": \"string\", \"enum\": [\"NONE\", \"LOW\", \"MEDIUM\", \"HIGH\", \"CRITICAL\"]},\n        \"signals\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n      }\n    },\n    \"missing_information\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"decision\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary_action\": {\"type\": \"string\", \"enum\": [\"REQUEST_MORE_INFO\", \"PROVIDE_INFO\", \"LOG_AND_ROUTE\", \"SCHEDULE_REQUEST\", \"ESCALATE_HUMAN\", \"REJECT_REQUEST\"]},\n        \"reason\": {\"type\": \"string\"}\n      }\n    },\n    \"constraints_applied\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"escalation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"required\": {\"type\": \"boolean\"},\n        \"reason\": {\"type\": \"string\"}\n      }\n    }\n  },\n  \"required\": [\"comprehension\", \"relevance\", \"intent\", \"user_states\", \"risk\", \"decision\", \"constraints_applied\", \"escalation\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        400
+      ],
+      "id": "a6ef7d3b-3663-43f6-b5c6-97d9630f93ba",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "ESCALATE_HUMAN"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "PROVIDE_INFO"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "REQUEST_MORE_INFO"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "REJECT_REQUEST"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "switch-action-id",
+      "name": "Switch_Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        832,
+        176
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalización",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "IF_Critical_Risk": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Critical_Escalation",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "Set_Normal_Escalation",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Normalización": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "index": 0,
+            "node": "tyla_q",
+            "type": "ai_vectorStore"
+          }
+        ]
+      ]
+    },
+    "Set_Critical_Escalation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Final_Action_Wrapper": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Webhook Response Final",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Normal_Escalation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Provide_Info": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Rejection": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Request_More_Info": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "tyla_q": {
+      "ai_tool": [
+        [
+          {
+            "index": 0,
+            "node": "AI Agent",
+            "type": "ai_tool"
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalización",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "tyla_q",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Switch_Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch_Action": {
+      "main": [
+        [
+          {
+            "node": "IF_Critical_Risk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Provide_Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Request_More_Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set_Rejection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "8d97f6e5-ac0f-4944-9c42-753689bd5547",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "673a645f397b99ca55a9ffe08da32efbeb167bac5b0fb505af985c363459f35b"
+  },
+  "id": "lBSnlycscylzxxEk",
+  "tags": [
+    {
+      "name": "xnoria-mvp-26",
+      "id": "yo0Xc2h0aMzs7tfI",
+      "updatedAt": "2026-02-18T23:40:01.905Z",
+      "createdAt": "2026-02-18T23:40:01.905Z"
+    }
+  ]
+}
