@@ -1,0 +1,142 @@
+{
+    "name": "ROYA_WF_OutOfHours_Engine_v1",
+    "nodes": [
+        {
+            "id": "webhook-id",
+            "name": "Inbound Trigger",
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "roya-ooh-trigger-v1",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1
+        },
+        {
+            "id": "time-check-id",
+            "name": "Time & Timezone Check",
+            "parameters": {
+                "jsCode": "// Logic to check if current time is within 9 AM - 6 PM (Client Local)\n// Mock implementation assumes Client Timezone is UTC-6\nconst now = new Date();\nconst hour = now.getUTCHours() - 6; // Central Time\nconst isBusinessHours = hour >= 9 && hour < 18;\n\nreturn {\n  json: {\n    is_ooh: !isBusinessHours,\n    local_hour: hour, \n    timestamp: now.toISOString()\n  }\n};"
+            },
+            "position": [
+                240,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "ooh-filter-id",
+            "name": "Is Out of Hours?",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "333",
+                            "leftValue": "={{ $json.is_ooh }}",
+                            "operator": {
+                                "operation": "equals",
+                                "type": "boolean"
+                            },
+                            "rightValue": true
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    }
+                }
+            },
+            "position": [
+                480,
+                0
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
+        },
+        {
+            "id": "ai-nurture-id",
+            "name": "AI Nurture Bot (Groq)",
+            "parameters": {
+                "promptType": "define",
+                "text": "Hola, gracias por escribirnos fuera de horario. ¿En qué podemos ayudarte? Mientras tanto, cuéntanos tu nombre."
+            },
+            "position": [
+                720,
+                -80
+            ],
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1
+        },
+        {
+            "id": "handoff-id",
+            "name": "Direct Sales Handoff",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "new_lead_business_hours"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                720,
+                120
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        }
+    ],
+    "connections": {
+        "Inbound Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Time & Timezone Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Time & Timezone Check": {
+            "main": [
+                [
+                    {
+                        "node": "Is Out of Hours?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Out of Hours?": {
+            "main": [
+                [
+                    {
+                        "node": "AI Nurture Bot (Groq)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Direct Sales Handoff",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

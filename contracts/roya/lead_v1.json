@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://xnoria.dev/schemas/roya/lead_v1.json",
+  "title": "ROYA Lead v1",
+  "description": "Canonical lead schema for ROYA v1 system.",
+  "type": "object",
+  "required": [
+    "lead_id",
+    "phone",
+    "source",
+    "status",
+    "created_at",
+    "schema_version"
+  ],
+  "properties": {
+    "lead_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for the lead."
+    },
+    "phone": {
+      "type": "string",
+      "pattern": "^\\+[1-9]\\d{1,14}$",
+      "description": "Phone number in E.164 format."
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "db_reactivation",
+        "fresh_optin",
+        "out_of_hours",
+        "document_request"
+      ],
+      "description": "Original source/trigger for the lead interaction."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "contacted",
+        "qualifying",
+        "qualified",
+        "unqualified",
+        "awaiting_documents",
+        "document_received",
+        "converted",
+        "dead"
+      ],
+      "description": "Current lifecycle status of the lead."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of lead creation."
+    },
+    "schema_version": {
+      "type": "string",
+      "const": "v1",
+      "description": "Fixed version identifier."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Optional email address."
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name of the lead."
+    },
+    "custom_fields": {
+      "type": "object",
+      "description": "Domain-specific arbitrary key-value pairs."
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "provider_lead_id": { "type": "string" },
+        "campaign_id": { "type": "string" },
+        "utm_params": { "type": "object" },
+        "last_interaction_at": { "type": "string", "format": "date-time" },
+        "interaction_count": { "type": "integer", "default": 0 },
+        "niche": { "type": "string" },
+        "region": { "type": "string" },
+        "partner_id": { "type": "string" }
+      },
+      "description": "Operational metadata."
+    }
+  }
+}

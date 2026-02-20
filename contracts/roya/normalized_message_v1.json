@@ -1,0 +1,87 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://xnoria.dev/schemas/roya/normalized_message_v1.json",
+    "title": "ROYA Normalized Message v1",
+    "description": "Standardized format for incoming and outgoing messages in ROYA v1.",
+    "type": "object",
+    "required": [
+        "message_id",
+        "timestamp",
+        "direction",
+        "channel",
+        "from",
+        "to",
+        "content"
+    ],
+    "properties": {
+        "message_id": {
+            "type": "string",
+            "description": "Provider-specific or internal unique message ID."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO-8601 timestamp of the message."
+        },
+        "direction": {
+            "type": "string",
+            "enum": [
+                "inbound",
+                "outbound"
+            ],
+            "description": "Message flow direction."
+        },
+        "channel": {
+            "type": "string",
+            "enum": [
+                "sms",
+                "whatsapp",
+                "email"
+            ],
+            "description": "Communication channel used."
+        },
+        "from": {
+            "type": "string",
+            "description": "Sender identifier (phone or email)."
+        },
+        "to": {
+            "type": "string",
+            "description": "Recipient identifier (phone or email)."
+        },
+        "content": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "media",
+                        "template",
+                        "interactive"
+                    ],
+                    "description": "Type of message content."
+                },
+                "body": {
+                    "type": "string",
+                    "description": "Text body or caption."
+                },
+                "media_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "URL to media if type is media."
+                },
+                "mime_type": {
+                    "type": "string",
+                    "description": "MIME type for media."
+                }
+            }
+        },
+        "metadata": {
+            "type": "object",
+            "description": "Channel-specific extra data."
+        }
+    }
+}

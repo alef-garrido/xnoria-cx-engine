@@ -1,0 +1,71 @@
+{
+    "name": "WF_WhatsApp_Decision_Engine_v1",
+    "nodes": [
+        {
+            "id": "wa-webhook-id",
+            "name": "WhatsApp Webhook Inbound",
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "roya-whatsapp-inbound-v1",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1
+        },
+        {
+            "id": "adapter-id",
+            "name": "Normalizer (WhatsApp Adapter)",
+            "parameters": {
+                "jsCode": "// Normalization logic from FR-2\nconst raw = $json.body;\nlet normalized_message = \"\";\nconst type = raw.message_type || \"text\";\n\nswitch(type) {\n  case \"text\": normalized_message = raw.message; break;\n  case \"image\": normalized_message = \"IMAGEN: \" + (raw.metadata.caption || \"SIN_CONTEXTO\"); break;\n  case \"audio\": normalized_message = \"AUDIO_TRANSCRITO: [Simulated Transcription]\"; break;\n  case \"location\": normalized_message = `UBICACION: ${raw.metadata.lat}, ${raw.metadata.long}`; break;\n  default: normalized_message = \"UNKNOWN_FORMAT\";\n}\n\nreturn {\n  json: {\n    input_id: raw.input_id,\n    channel: \"whatsapp\",\n    message: normalized_message,\n    metadata: raw.metadata\n  }\n};"
+            },
+            "position": [
+                240,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "decision-id",
+            "name": "Core Decision Engine",
+            "parameters": {
+                "promptType": "define",
+                "text": "Analyze this WhatsApp message and decide the next action based on ROYA contracts. Message: {{ $json.message }}"
+            },
+            "position": [
+                480,
+                0
+            ],
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1
+        }
+    ],
+    "connections": {
+        "WhatsApp Webhook Inbound": {
+            "main": [
+                [
+                    {
+                        "node": "Normalizer (WhatsApp Adapter)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalizer (WhatsApp Adapter)": {
+            "main": [
+                [
+                    {
+                        "node": "Core Decision Engine",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -1,0 +1,149 @@
+{
+    "name": "WF_DocumentCollection_Engine_v1 (Validation)",
+    "nodes": [
+        {
+            "id": "webhook-id",
+            "name": "Submission Webhook",
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "roya-doc-submission-v1",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1
+        },
+        {
+            "id": "normalize-id",
+            "name": "Normalize Submission",
+            "parameters": {
+                "jsCode": "const body = $json.body;\nreturn {\n  json: {\n    lead_id: body.lead_id,\n    document_type: body.document_type,\n    media_url: body.media_url || body.file_url,\n    timestamp: new Date().toISOString()\n  }\n};"
+            },
+            "position": [
+                200,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "validate-id",
+            "name": "Validate Document Structure",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "222",
+                            "leftValue": "={{ !!$json.media_url }}",
+                            "operator": {
+                                "operation": "equals",
+                                "type": "boolean"
+                            },
+                            "rightValue": true
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    }
+                }
+            },
+            "position": [
+                440,
+                0
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
+        },
+        {
+            "id": "success-id",
+            "name": "CRM Update (Success)",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "document_received"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                680,
+                -80
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "failure-id",
+            "name": "Request Retry (Failure)",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "document_rejected"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                680,
+                120
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        }
+    ],
+    "connections": {
+        "Submission Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize Submission",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize Submission": {
+            "main": [
+                [
+                    {
+                        "node": "Validate Document Structure",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Validate Document Structure": {
+            "main": [
+                [
+                    {
+                        "node": "CRM Update (Success)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Request Retry (Failure)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

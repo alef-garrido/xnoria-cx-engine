@@ -1,0 +1,96 @@
+{
+    "name": "WF_SpeedToLead_Engine_v1",
+    "nodes": [
+        {
+            "id": "webhook-trigger-id",
+            "name": "Webhook Trigger",
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "roya-speed-to-lead-v1",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1
+        },
+        {
+            "id": "normalization-id",
+            "name": "Normalized Lead",
+            "parameters": {
+                "jsCode": "// Normalization of fresh lead from webhook\nconst body = $json.body;\nreturn {\n  json: {\n    lead_id: body.id || Math.random().toString(36).substr(2, 9),\n    phone: body.phone,\n    name: body.name,\n    source: \"fresh_optin\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: {\n      original_payload: body,\n      niche: body.niche || \"clinica\"\n    }\n  }\n};"
+            },
+            "position": [
+                200,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "compliance-check-id",
+            "name": "Compliance Check",
+            "parameters": {
+                "jsCode": "// Immediate Compliance Check for Speed to Lead\nconst lead = $json;\nreturn {\n  json: { ...lead, compliance_result: \"allowed\" }\n};"
+            },
+            "position": [
+                400,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "ack-delivery-id",
+            "name": "Immediate Acknowledgment",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "https://graph.facebook.com/v21.0/YOUR_PHONE_NUMBER_ID/messages"
+            },
+            "position": [
+                600,
+                0
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        }
+    ],
+    "connections": {
+        "Webhook Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Normalized Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalized Lead": {
+            "main": [
+                [
+                    {
+                        "node": "Compliance Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Compliance Check": {
+            "main": [
+                [
+                    {
+                        "node": "Immediate Acknowledgment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

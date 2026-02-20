@@ -1,0 +1,274 @@
+{
+    "name": "WF_SleepingBeauty_DBR_Engine_v1 (Conversation)",
+    "nodes": [
+        {
+            "id": "webhook-reply-id",
+            "name": "Webhook Reply",
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "roya-dbr-reply-v1",
+                "responseMode": "onReceived"
+            },
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1.1
+        },
+        {
+            "id": "normalization-id",
+            "name": "Normalized Reply",
+            "parameters": {
+                "jsCode": "// Normalization of incoming reply\nconst body = $json.body;\nreturn {\n  json: {\n    message_id: body.id || Math.random().toString(36).substr(2, 9),\n    from: body.from,\n    timestamp: new Date().toISOString(),\n    content: {\n      type: \"text\",\n      body: body.text?.body || \"\"\n    },\n    metadata: body\n  }\n};"
+            },
+            "position": [
+                200,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "filter-orphan-id",
+            "name": "Filter Not Found",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "456",
+                            "leftValue": "={{ $json.from }}",
+                            "operator": {
+                                "operation": "notEmpty",
+                                "type": "string"
+                            },
+                            "rightValue": ""
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    }
+                }
+            },
+            "position": [
+                400,
+                0
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
+        },
+        {
+            "id": "ai-agent-id",
+            "name": "AI Agent",
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $json.content.body }}"
+            },
+            "position": [
+                600,
+                0
+            ],
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 3.1
+        },
+        {
+            "id": "switch-id",
+            "name": "Qualification Switch",
+            "parameters": {
+                "rules": {
+                    "values": [
+                        {
+                            "conditions": {
+                                "combinator": "and",
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.output.result }}",
+                                        "operator": {
+                                            "operation": "equals",
+                                            "type": "string"
+                                        },
+                                        "rightValue": "qualified"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "combinator": "and",
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.output.result }}",
+                                        "operator": {
+                                            "operation": "equals",
+                                            "type": "string"
+                                        },
+                                        "rightValue": "unqualified"
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "conditions": {
+                                "combinator": "and",
+                                "conditions": [
+                                    {
+                                        "leftValue": "={{ $json.output.result }}",
+                                        "operator": {
+                                            "operation": "equals",
+                                            "type": "string"
+                                        },
+                                        "rightValue": "needs_more_info"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            "position": [
+                800,
+                0
+            ],
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "schedule-id",
+            "name": "Schedule Appointment",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "converted"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                1000,
+                -100
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "disqualify-id",
+            "name": "Disqualify Lead",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "disqualified"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                1000,
+                100
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        },
+        {
+            "id": "ask-more-id",
+            "name": "Ask More Questions",
+            "parameters": {
+                "assignments": {
+                    "assignments": [
+                        {
+                            "name": "status",
+                            "type": "string",
+                            "value": "qualifying"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                1000,
+                300
+            ],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4
+        }
+    ],
+    "connections": {
+        "Webhook Reply": {
+            "main": [
+                [
+                    {
+                        "node": "Normalized Reply",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalized Reply": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Not Found",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter Not Found": {
+            "main": [
+                [
+                    {
+                        "node": "AI Agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Agent": {
+            "main": [
+                [
+                    {
+                        "node": "Qualification Switch",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Qualification Switch": {
+            "main": [
+                [
+                    {
+                        "node": "Schedule Appointment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Disqualify Lead",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Ask More Questions",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

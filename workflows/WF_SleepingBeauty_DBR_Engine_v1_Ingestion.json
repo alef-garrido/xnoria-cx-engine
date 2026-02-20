@@ -1,0 +1,135 @@
+{
+    "name": "WF_SleepingBeauty_DBR_Engine_v1 (Ingestion)",
+    "nodes": [
+        {
+            "id": "manual-trigger-id",
+            "name": "Manual Trigger",
+            "parameters": {},
+            "position": [
+                0,
+                0
+            ],
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1
+        },
+        {
+            "id": "ingestion-code-id",
+            "name": "Ingestion & Validation",
+            "parameters": {
+                "jsCode": "// Simulated CSV Ingestion Logic\n// In production, this would follow a 'Read Binary File' or 'Google Sheets' node\nconst leads = [\n  { phone: \"+521234567890\", name: \"Juan Perez\", source: \"old_db_2024\" },\n  { phone: \"+520987654321\", name: \"Maria Garcia\", source: \"old_db_2024\" }\n];\n\nreturn leads.map(l => ({\n  json: {\n    lead_id: Math.random().toString(36).substr(2, 9),\n    phone: l.phone,\n    name: l.name,\n    source: \"db_reactivation\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: {\n      original_source: l.source,\n      niche: \"clinica\"\n    }\n  }\n}));"
+            },
+            "position": [
+                200,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "compliance-check-id",
+            "name": "Compliance Check",
+            "parameters": {
+                "jsCode": "// Compliance Guardrails Implementation (Simplified)\nconst lead = $json;\nconst isOptedOut = false; // This would query a Global Opt-Out list in production\n\nif (isOptedOut) {\n  return {\n    json: { ...lead, compliance_result: \"blocked\", reason: \"opt_out\" }\n  };\n}\n\nreturn {\n  json: { ...lead, compliance_result: \"allowed\" }\n};"
+            },
+            "position": [
+                400,
+                0
+            ],
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2
+        },
+        {
+            "id": "filter-blocked-id",
+            "name": "Filter Blocked",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "123",
+                            "leftValue": "={{ $json.compliance_result }}",
+                            "operator": {
+                                "operation": "equals",
+                                "type": "string"
+                            },
+                            "rightValue": "allowed"
+                        }
+                    ],
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    }
+                }
+            },
+            "position": [
+                600,
+                0
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
+        },
+        {
+            "id": "send-kiss-id",
+            "name": "WhatsApp Send (Kiss)",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "https://graph.facebook.com/v21.0/YOUR_PHONE_NUMBER_ID/messages"
+            },
+            "position": [
+                800,
+                -100
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Ingestion & Validation",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Ingestion & Validation": {
+            "main": [
+                [
+                    {
+                        "node": "Compliance Check",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Compliance Check": {
+            "main": [
+                [
+                    {
+                        "node": "Filter Blocked",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Filter Blocked": {
+            "main": [
+                [
+                    {
+                        "node": "WhatsApp Send (Kiss)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

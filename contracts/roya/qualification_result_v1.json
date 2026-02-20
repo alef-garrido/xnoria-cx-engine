@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://xnoria.dev/schemas/roya/qualification_result_v1.json",
+    "title": "ROYA Qualification Result v1",
+    "description": "Structured output from the ROYA qualification engine.",
+    "type": "object",
+    "required": [
+        "result",
+        "score",
+        "reason_codes"
+    ],
+    "properties": {
+        "result": {
+            "type": "string",
+            "enum": [
+                "qualified",
+                "unqualified",
+                "needs_more_info"
+            ],
+            "description": "Final qualification decision."
+        },
+        "score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Numerical score (0-100) representing lead viability."
+        },
+        "reason_codes": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "List of standardized reason codes for the decision."
+        },
+        "missing_questions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string"
+                    },
+                    "field": {
+                        "type": "string"
+                    },
+                    "required": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "description": "Optional follow-up questions for 'needs_more_info' result."
+        }
+    }
+}
