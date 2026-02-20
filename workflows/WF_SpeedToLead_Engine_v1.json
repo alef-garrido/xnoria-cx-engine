@@ -30,17 +30,80 @@
             "typeVersion": 2
         },
         {
-            "id": "compliance-check-id",
-            "name": "Compliance Check",
+            "id": "wf02-compliance-id",
+            "name": "WF-02 Compliance Check",
             "parameters": {
-                "jsCode": "// Immediate Compliance Check for Speed to Lead\nconst lead = $json;\nreturn {\n  json: { ...lead, compliance_result: \"allowed\" }\n};"
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-compliance-validate-v1",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json }}"
             },
             "position": [
                 400,
                 0
             ],
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "allowed-filter-id",
+            "name": "Is Allowed?",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "allowed-id",
+                            "leftValue": "={{ $json.allowed }}",
+                            "operator": {
+                                "operation": "equals",
+                                "type": "boolean"
+                            },
+                            "rightValue": true
+                        }
+                    ]
+                }
+            },
+            "position": [
+                600,
+                0
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
+        },
+        {
+            "id": "wf07-log-trigger-id",
+            "name": "WF-07 Log Trigger",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "speed_to_lead_triggered"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"Normalized Lead\"].json.lead_id }}"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                800,
+                -100
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
         },
         {
             "id": "ack-delivery-id",
@@ -51,8 +114,40 @@
                 "url": "https://graph.facebook.com/v21.0/YOUR_PHONE_NUMBER_ID/messages"
             },
             "position": [
-                600,
-                0
+                800,
+                100
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "wf07-log-acked-id",
+            "name": "WF-07 Log Acked",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "speed_to_lead_acked"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"Normalized Lead\"].json.lead_id }}"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                1000,
+                100
             ],
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4
@@ -74,18 +169,45 @@
             "main": [
                 [
                     {
-                        "node": "Compliance Check",
+                        "node": "WF-02 Compliance Check",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Compliance Check": {
+        "WF-02 Compliance Check": {
             "main": [
                 [
                     {
+                        "node": "Is Allowed?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Allowed?": {
+            "main": [
+                [
+                    {
+                        "node": "WF-07 Log Trigger",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
                         "node": "Immediate Acknowledgment",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Immediate Acknowledgment": {
+            "main": [
+                [
+                    {
+                        "node": "WF-07 Log Acked",
                         "type": "main",
                         "index": 0
                     }

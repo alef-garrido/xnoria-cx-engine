@@ -17,17 +17,22 @@
             "typeVersion": 1.1
         },
         {
-            "id": "time-check-id",
-            "name": "Time & Timezone Check",
+            "id": "wf02-compliance-id",
+            "name": "WF-02 Compliance Check",
             "parameters": {
-                "jsCode": "// Logic to check if current time is within 9 AM - 6 PM (Client Local)\n// Mock implementation assumes Client Timezone is UTC-6\nconst now = new Date();\nconst hour = now.getUTCHours() - 6; // Central Time\nconst isBusinessHours = hour >= 9 && hour < 18;\n\nreturn {\n  json: {\n    is_ooh: !isBusinessHours,\n    local_hour: hour, \n    timestamp: now.toISOString()\n  }\n};"
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-compliance-validate-v1",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.body }}"
             },
             "position": [
-                240,
+                200,
                 0
             ],
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
         },
         {
             "id": "ooh-filter-id",
@@ -37,29 +42,55 @@
                     "combinator": "and",
                     "conditions": [
                         {
-                            "id": "333",
-                            "leftValue": "={{ $json.is_ooh }}",
+                            "id": "ooh-id",
+                            "leftValue": "={{ $json.reason }}",
                             "operator": {
                                 "operation": "equals",
-                                "type": "boolean"
+                                "type": "string"
                             },
-                            "rightValue": true
+                            "rightValue": "outside_allowed_hours"
                         }
-                    ],
-                    "options": {
-                        "caseSensitive": true,
-                        "leftValue": "",
-                        "typeValidation": "strict",
-                        "version": 2
-                    }
+                    ]
                 }
             },
             "position": [
-                480,
+                400,
                 0
             ],
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2
+        },
+        {
+            "id": "wf07-log-ooh-id",
+            "name": "WF-07 Log OOH",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "ooh_nurture_triggered"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"WF-02 Compliance Check\"].json.lead_id }}"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                600,
+                -150
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
         },
         {
             "id": "ai-nurture-id",
@@ -69,8 +100,8 @@
                 "text": "Hola, gracias por escribirnos fuera de horario. ¿En qué podemos ayudarte? Mientras tanto, cuéntanos tu nombre."
             },
             "position": [
-                720,
-                -80
+                600,
+                -30
             ],
             "type": "@n8n/n8n-nodes-langchain.agent",
             "typeVersion": 3.1
@@ -90,8 +121,8 @@
                 }
             },
             "position": [
-                720,
-                120
+                600,
+                150
             ],
             "type": "n8n-nodes-base.set",
             "typeVersion": 3.4
@@ -102,14 +133,14 @@
             "main": [
                 [
                     {
-                        "node": "Time & Timezone Check",
+                        "node": "WF-02 Compliance Check",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Time & Timezone Check": {
+        "WF-02 Compliance Check": {
             "main": [
                 [
                     {
@@ -123,6 +154,11 @@
         "Is Out of Hours?": {
             "main": [
                 [
+                    {
+                        "node": "WF-07 Log OOH",
+                        "type": "main",
+                        "index": 0
+                    },
                     {
                         "node": "AI Nurture Bot (Groq)",
                         "type": "main",

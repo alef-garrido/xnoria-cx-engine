@@ -13,10 +13,10 @@
             "typeVersion": 1
         },
         {
-            "id": "ingestion-code-id",
-            "name": "Ingestion & Validation",
+            "id": "ingestion-id",
+            "name": "Ingestion",
             "parameters": {
-                "jsCode": "// Simulated CSV Ingestion Logic\n// In production, this would follow a 'Read Binary File' or 'Google Sheets' node\nconst leads = [\n  { phone: \"+521234567890\", name: \"Juan Perez\", source: \"old_db_2024\" },\n  { phone: \"+520987654321\", name: \"Maria Garcia\", source: \"old_db_2024\" }\n];\n\nreturn leads.map(l => ({\n  json: {\n    lead_id: Math.random().toString(36).substr(2, 9),\n    phone: l.phone,\n    name: l.name,\n    source: \"db_reactivation\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: {\n      original_source: l.source,\n      niche: \"clinica\"\n    }\n  }\n}));"
+                "jsCode": "// Simulated CSV Ingestion Logic\nconst leads = [\n  { phone: \"+521234567890\", name: \"Juan Perez\", source: \"old_db_2024\" },\n  { phone: \"+520987654321\", name: \"Maria Garcia\", source: \"old_db_2024\" }\n];\n\nreturn leads.map(l => ({ json: l }));"
             },
             "position": [
                 200,
@@ -26,61 +26,159 @@
             "typeVersion": 2
         },
         {
-            "id": "compliance-check-id",
-            "name": "Compliance Check",
+            "id": "wf01-lead-factory-id",
+            "name": "WF-01 Lead Factory",
             "parameters": {
-                "jsCode": "// Compliance Guardrails Implementation (Simplified)\nconst lead = $json;\nconst isOptedOut = false; // This would query a Global Opt-Out list in production\n\nif (isOptedOut) {\n  return {\n    json: { ...lead, compliance_result: \"blocked\", reason: \"opt_out\" }\n  };\n}\n\nreturn {\n  json: { ...lead, compliance_result: \"allowed\" }\n};"
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-shared-lead-factory-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "phone",
+                            "value": "={{ $json.phone }}"
+                        },
+                        {
+                            "name": "source",
+                            "value": "db_reactivation"
+                        },
+                        {
+                            "name": "metadata",
+                            "value": "={{ { name: $json.name, original_source: $json.source } }}"
+                        }
+                    ]
+                }
             },
             "position": [
                 400,
                 0
             ],
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
         },
         {
-            "id": "filter-blocked-id",
-            "name": "Filter Blocked",
+            "id": "wf02-compliance-id",
+            "name": "WF-02 Compliance Check",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-compliance-validate-v1",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json }}"
+            },
+            "position": [
+                600,
+                0
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "compliance-filter-id",
+            "name": "Is Allowed?",
             "parameters": {
                 "conditions": {
                     "combinator": "and",
                     "conditions": [
                         {
-                            "id": "123",
-                            "leftValue": "={{ $json.compliance_result }}",
+                            "id": "allowed-id",
+                            "leftValue": "={{ $json.allowed }}",
                             "operator": {
                                 "operation": "equals",
-                                "type": "string"
+                                "type": "boolean"
                             },
-                            "rightValue": "allowed"
+                            "rightValue": true
                         }
-                    ],
-                    "options": {
-                        "caseSensitive": true,
-                        "leftValue": "",
-                        "typeValidation": "strict",
-                        "version": 2
-                    }
+                    ]
                 }
             },
             "position": [
-                600,
+                800,
                 0
             ],
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2
         },
         {
-            "id": "send-kiss-id",
-            "name": "WhatsApp Send (Kiss)",
+            "id": "wf07-log-trigger-id",
+            "name": "WF-07 Log Trigger",
             "parameters": {
                 "httpMethod": "POST",
                 "options": {},
-                "url": "https://graph.facebook.com/v21.0/YOUR_PHONE_NUMBER_ID/messages"
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "dbr_ingestion_triggered"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"WF-01 Lead Factory\"].json.lead_id }}"
+                        }
+                    ]
+                }
             },
             "position": [
-                800,
+                1000,
                 -100
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "ack-delivery-id",
+            "name": "WhatsApp Sandbox (Kiss Delivery)",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "https://graph.facebook.com/v21.0/YOUR_PHONE_NUMBER_ID/messages",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $node[\"WF-01 Lead Factory\"].json }}"
+            },
+            "position": [
+                1000,
+                100
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "wf07-log-sent-id",
+            "name": "WF-07 Log Sent",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "dbr_message_sent"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"WF-01 Lead Factory\"].json.lead_id }}"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                1200,
+                100
             ],
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4
@@ -91,40 +189,67 @@
             "main": [
                 [
                     {
-                        "node": "Ingestion & Validation",
+                        "node": "Ingestion",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Ingestion & Validation": {
+        "Ingestion": {
             "main": [
                 [
                     {
-                        "node": "Compliance Check",
+                        "node": "WF-01 Lead Factory",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Compliance Check": {
+        "WF-01 Lead Factory": {
             "main": [
                 [
                     {
-                        "node": "Filter Blocked",
+                        "node": "WF-02 Compliance Check",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "Filter Blocked": {
+        "WF-02 Compliance Check": {
             "main": [
                 [
                     {
-                        "node": "WhatsApp Send (Kiss)",
+                        "node": "Is Allowed?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is Allowed?": {
+            "main": [
+                [
+                    {
+                        "node": "WF-07 Log Trigger",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "WhatsApp Sandbox (Kiss Delivery)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "WhatsApp Sandbox (Kiss Delivery)": {
+            "main": [
+                [
+                    {
+                        "node": "WF-07 Log Sent",
                         "type": "main",
                         "index": 0
                     }

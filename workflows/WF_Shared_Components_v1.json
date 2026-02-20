@@ -1,0 +1,32 @@
+{
+    "name": "ROYA_Shared_Components_v1",
+    "nodes": [
+        {
+            "parameters": {
+                "jsCode": "// Centralized configuration for ROYA Ecosystem\nconst region = $json.region || \"MX\";\nconst config = {\n  MX: {\n    timezone: \"America/Mexico_City\",\n    language: \"es-MX\",\n    allowed_hours: { start: 9, end: 20 }\n  },\n  US: {\n    timezone: \"America/New_York\",\n    language: \"en-US\",\n    allowed_hours: { start: 8, end: 21 }\n  }\n};\n\nreturn {\n  json: {\n    region: region,\n    config: config[region] || config.MX,\n    schema_version: \"v1\"\n  }\n};"
+            },
+            "id": "config-loader-id",
+            "name": "Config Loader",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                250,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Standard Lead Schema v1 Factory\nconst input = $json.body || $json;\nreturn {\n  json: {\n    lead_id: input.lead_id || \"new-uuid\",\n    phone: input.phone,\n    source: input.source || \"unknown\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: input.metadata || {}\n  }\n};"
+            },
+            "id": "lead-factory-id",
+            "name": "Lead Factory (v1)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                500,
+                0
+            ]
+        }
+    ],
+    "connections": {}
+}

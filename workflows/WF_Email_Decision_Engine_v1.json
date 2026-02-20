@@ -383,12 +383,62 @@
     },
     {
       "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "url": "http://localhost:5678/webhook/roya-compliance-validate-v1",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { lead_id: $('Normalización').item.json.metadata.from } }}"
+      },
+      "id": "wf02-compliance-id",
+      "name": "WF-02 Compliance Check",
+      "position": [
+        1600,
+        272
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "counter"
+            },
+            {
+              "name": "name",
+              "value": "email_decision_made"
+            },
+            {
+              "name": "lead_id",
+              "value": "={{ $('Normalización').item.json.metadata.from }}"
+            }
+          ]
+        }
+      },
+      "id": "wf07-log-decision-id",
+      "name": "WF-07 Log Decision",
+      "position": [
+        1800,
+        272
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4
+    },
+    {
+      "parameters": {
         "options": {}
       },
       "id": "respond-to-webhook-id",
       "name": "Webhook Response Final",
       "position": [
-        1712,
+        2000,
         272
       ],
       "type": "n8n-nodes-base.respondToWebhook",

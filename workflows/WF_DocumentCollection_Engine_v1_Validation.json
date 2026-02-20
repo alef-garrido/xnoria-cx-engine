@@ -30,6 +30,38 @@
             "typeVersion": 2
         },
         {
+            "id": "wf07-log-submission-id",
+            "name": "WF-07 Log Submission",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "doc_submission_received"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"Normalize Submission\"].json.lead_id }}"
+                        }
+                    ]
+                }
+            },
+            "position": [
+                400,
+                -150
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
             "id": "validate-id",
             "name": "Validate Document Structure",
             "parameters": {
@@ -45,46 +77,95 @@
                             },
                             "rightValue": true
                         }
-                    ],
-                    "options": {
-                        "caseSensitive": true,
-                        "leftValue": "",
-                        "typeValidation": "strict",
-                        "version": 2
-                    }
+                    ]
                 }
             },
             "position": [
-                440,
+                400,
                 0
             ],
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2
         },
         {
-            "id": "success-id",
-            "name": "CRM Update (Success)",
+            "id": "wf07-log-success-id",
+            "name": "WF-07 Log Success",
             "parameters": {
-                "assignments": {
-                    "assignments": [
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-metrics-collect-v1",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": [
                         {
-                            "name": "status",
-                            "type": "string",
-                            "value": "document_received"
+                            "name": "type",
+                            "value": "counter"
+                        },
+                        {
+                            "name": "name",
+                            "value": "doc_validation_success"
+                        },
+                        {
+                            "name": "lead_id",
+                            "value": "={{ $node[\"Normalize Submission\"].json.lead_id }}"
                         }
                     ]
                 }
             },
             "position": [
-                680,
-                -80
+                650,
+                -100
             ],
-            "type": "n8n-nodes-base.set",
-            "typeVersion": 3.4
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "wf02-compliance-retry-id",
+            "name": "WF-02 Compliance (Retry)",
+            "parameters": {
+                "httpMethod": "POST",
+                "options": {},
+                "url": "http://localhost:5678/webhook/roya-compliance-validate-v1",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ { lead_id: $node[\"Normalize Submission\"].json.lead_id } }}"
+            },
+            "position": [
+                650,
+                150
+            ],
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4
+        },
+        {
+            "id": "allowed-retry-id",
+            "name": "Allowed to Message?",
+            "parameters": {
+                "conditions": {
+                    "combinator": "and",
+                    "conditions": [
+                        {
+                            "id": "allowed-id",
+                            "leftValue": "={{ $json.allowed }}",
+                            "operator": {
+                                "operation": "equals",
+                                "type": "boolean"
+                            },
+                            "rightValue": true
+                        }
+                    ]
+                }
+            },
+            "position": [
+                850,
+                150
+            ],
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2
         },
         {
             "id": "failure-id",
-            "name": "Request Retry (Failure)",
+            "name": "CRM Update (Failure)",
             "parameters": {
                 "assignments": {
                     "assignments": [
@@ -97,8 +178,8 @@
                 }
             },
             "position": [
-                680,
-                120
+                1050,
+                150
             ],
             "type": "n8n-nodes-base.set",
             "typeVersion": 3.4
@@ -120,6 +201,11 @@
             "main": [
                 [
                     {
+                        "node": "WF-07 Log Submission",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
                         "node": "Validate Document Structure",
                         "type": "main",
                         "index": 0
@@ -131,14 +217,36 @@
             "main": [
                 [
                     {
-                        "node": "CRM Update (Success)",
+                        "node": "WF-07 Log Success",
                         "type": "main",
                         "index": 0
                     }
                 ],
                 [
                     {
-                        "node": "Request Retry (Failure)",
+                        "node": "WF-02 Compliance (Retry)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "WF-02 Compliance (Retry)": {
+            "main": [
+                [
+                    {
+                        "node": "Allowed to Message?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Allowed to Message?": {
+            "main": [
+                [
+                    {
+                        "node": "CRM Update (Failure)",
                         "type": "main",
                         "index": 0
                     }
