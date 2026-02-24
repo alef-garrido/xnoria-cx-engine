@@ -1,10 +1,10 @@
 # 📄 Product Requirements Document (PRD) Técnico
 
-## ROYA_Compliance_Guardrails_v1
+## cxEngine_Compliance_Guardrails_v1
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Compliance Transversal  
+**Dominio:** cxEngine / Compliance Transversal  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM + Storage)
 
 ---
@@ -12,7 +12,7 @@
 ## 1. Overview Técnico
 
 ### 1.1 Propósito del módulo
-Proveer una capa de guardrails de compliance transversal a todos los Androids de ROYA, garantizando cumplimiento automático con regulaciones de comunicación (TCPA, GDPR, LGPD, etc.), manejo ético de datos y protección reputacional, sin intervención humana ni duplicación de lógica por Android.
+Proveer una capa de guardrails de compliance transversal a todos los Androids de cxEngine, garantizando cumplimiento automático con regulaciones de comunicación (TCPA, GDPR, LGPD, etc.), manejo ético de datos y protección reputacional, sin intervención humana ni duplicación de lógica por Android.
 
 ### 1.2 Arquitectura de alto nivel
 ```
@@ -1281,7 +1281,7 @@ optout_keywords:
 // === Cómo integrar Compliance Guardrails en un Android ===
 
 // 1. Importar dependencia
-IMPORT ComplianceGuardrails FROM "@roya/compliance-guardrails"
+IMPORT ComplianceGuardrails FROM "@cxEngine/compliance-guardrails"
 
 // 2. Inicializar con configuración
 const compliance = new ComplianceGuardrails({
@@ -1420,7 +1420,7 @@ audit_config:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define la capa de compliance transversal que protege a todos los Androids de ROYA.  
+> Este SPEC define la capa de compliance transversal que protege a todos los Androids de cxEngine.  
 > No es un "feature" opcional: es el sistema inmunológico del producto.  
 > Cada Android DEBE integrar estos guardrails — no hay excepciones.  
 > La clave del éxito no es la complejidad, es la **consistencia automática** + **fail-safe por diseño** + **auditoría nativa**.  

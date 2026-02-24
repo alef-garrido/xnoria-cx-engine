@@ -4,7 +4,7 @@
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Sleeping Beauty Android (DBR)  
+**Dominio:** cxEngine / Sleeping Beauty Android (DBR)  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM)
 
 ---
@@ -18,7 +18,7 @@ Motor de reactivación de bases de datos inactivas (DBR) que transforma leads "m
 ```
 CSV Leads Inactivos → Ingestion → Prince Charming Kiss → Conversation Loop → Qualification → Appointment → CRM Sync
                               ↓
-                    [ROYA Shared Components]
+                    [cxEngine Shared Components]
                     - Lead Schema v1
                     - ChannelAdapter
                     - ComplianceGuardrails
@@ -119,7 +119,7 @@ Como operador, quiero cargar un archivo CSV con leads inactivos y que el sistema
 - [ ] Soporte para CSV con columnas: `phone`, `name`, `last_contact_date`, `source`, `custom_fields`
 - [ ] Validación de formato phone (E.164) y rechazo de inválidos
 - [ ] Deduplicación por `phone` dentro del mismo batch y contra CRM existente
-- [ ] Normalización a `Lead_v1` schema de ROYA Shared Components
+- [ ] Normalización a `Lead_v1` schema de cxEngine Shared Components
 - [ ] Asignación de `status: "new"` y `source: "db_reactivation"`
 - [ ] Logging de leads rechazados con razón clara
 - [ ] Throughput: ≥ 1000 leads/minuto en ingestión
@@ -619,7 +619,7 @@ FUNCTION emit_dbr_metrics(lead: Lead_v1, event: ENUM, metadata: OBJECT):
 
 ## 7. Technical Specifications
 
-### 7.1 Contratos Extendidos (sobre ROYA Shared Components)
+### 7.1 Contratos Extendidos (sobre cxEngine Shared Components)
 
 #### QualificationResult Schema
 ```json
@@ -975,7 +975,7 @@ signal_patterns:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define el primer Android de ROYA: el motor de reactivación que convierte bases muertas en revenue.  
-> Cada componente debe reutilizar ROYA_Shared_Components_v1 — nada de duplicar lógica.  
+> Este SPEC define el primer Android de cxEngine: el motor de reactivación que convierte bases muertas en revenue.  
+> Cada componente debe reutilizar cxEngine_Shared_Components_v1 — nada de duplicar lógica.  
 > La clave del éxito no es la IA, es la **consistencia conversacional** + **compliance estricto** + **métricas accionables**.  
 > Si algo no encaja en este spec, pregunta: "¿Esto ayuda a reactivar leads de forma compliant y medible?" antes de implementarlo.

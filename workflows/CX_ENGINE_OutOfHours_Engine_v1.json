@@ -1,0 +1,562 @@
+{
+  "updatedAt": "2026-02-23T05:50:41.617Z",
+  "createdAt": "2026-02-20T23:30:54.314Z",
+  "id": "GW3a7UKhd46yNMdP",
+  "name": "cxEngine_WF_OutOfHours_Engine_v1",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cxEngine-ooh-trigger-v1-fixed",
+        "options": {}
+      },
+      "id": "1",
+      "name": "InboundTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "webhookId": "1f8e57ba-056e-42e6-be3f-6cc268b6809b"
+    },
+    {
+      "parameters": {
+        "workflowId": "8wRPpZ3xnwvD2fmj",
+        "options": {}
+      },
+      "id": "2",
+      "name": "ComplianceCheck",
+      "position": [
+        208,
+        0
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ooh-id",
+              "leftValue": "={{ $json.reason }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "outside_allowed_hours"
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "IsOutOfHours",
+      "position": [
+        400,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "workflowId": "1fAXwkLkftHAc1Wy",
+        "options": {}
+      },
+      "id": "4",
+      "name": "LogOOH",
+      "position": [
+        672,
+        -224
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Hola, gracias por escribirnos fuera de horario. ¿En qué podemos ayudarte? Mientras tanto, cuéntanos tu nombre.",
+        "options": {}
+      },
+      "id": "5",
+      "name": "AINurtureBot",
+      "position": [
+        656,
+        -32
+      ],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "status",
+              "type": "string",
+              "value": "new_lead_business_hours"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "SalesHandoff",
+      "position": [
+        592,
+        320
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7",
+      "name": "GeminiModel",
+      "position": [
+        640,
+        144
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "8",
+      "name": "SimpleMemory",
+      "position": [
+        784,
+        176
+      ],
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3
+    }
+  ],
+  "connections": {
+    "AINurtureBot": {
+      "main": [
+        []
+      ]
+    },
+    "ComplianceCheck": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "IsOutOfHours",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "GeminiModel": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "AINurtureBot",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "InboundTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "ComplianceCheck",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IsOutOfHours": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogOOH",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "AINurtureBot",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "SalesHandoff",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "LogOOH": {
+      "main": [
+        []
+      ]
+    },
+    "SalesHandoff": {
+      "main": [
+        []
+      ]
+    },
+    "SimpleMemory": {
+      "ai_memory": [
+        [
+          {
+            "index": 0,
+            "node": "AINurtureBot",
+            "type": "ai_memory"
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "d9a55a2d-94d3-418e-8083-d9b0b642e9fe",
+  "activeVersionId": "d9a55a2d-94d3-418e-8083-d9b0b642e9fe",
+  "versionCounter": 22,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-20T23:30:54.328Z",
+      "createdAt": "2026-02-20T23:30:54.328Z",
+      "role": "workflow:owner",
+      "workflowId": "GW3a7UKhd46yNMdP",
+      "projectId": "71tFcDH72aEitFP0",
+      "project": {
+        "updatedAt": "2025-07-31T21:28:42.018Z",
+        "createdAt": "2025-07-29T22:02:28.078Z",
+        "id": "71tFcDH72aEitFP0",
+        "name": "Alef Lemat <lemat.garrido@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-29T22:02:28.078Z",
+            "createdAt": "2025-07-29T22:02:28.078Z",
+            "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+            "projectId": "71tFcDH72aEitFP0",
+            "user": {
+              "updatedAt": "2026-02-24T05:11:54.000Z",
+              "createdAt": "2025-07-29T22:02:27.451Z",
+              "id": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+              "email": "lemat.garrido@gmail.com",
+              "firstName": "Alef",
+              "lastName": "Lemat",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-31T21:29:16.642Z",
+                "personalization_survey_n8n_version": "1.104.1",
+                "companySize": "personalUser",
+                "companyType": "education",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "5F73gZtFAey5TB8FGO4zY",
+                "userActivatedAt": 1770249600538,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 2,
+                  "lastShownAt": 1771568167997
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-23",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-02-18T23:40:01.905Z",
+      "createdAt": "2026-02-18T23:40:01.905Z",
+      "id": "yo0Xc2h0aMzs7tfI",
+      "name": "xnoria-mvp-26"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-02-23T05:33:03.943Z",
+    "createdAt": "2026-02-23T05:33:03.943Z",
+    "versionId": "d9a55a2d-94d3-418e-8083-d9b0b642e9fe",
+    "workflowId": "GW3a7UKhd46yNMdP",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "cxEngine-ooh-trigger-v1-fixed",
+          "options": {}
+        },
+        "id": "1",
+        "name": "InboundTrigger",
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1.1,
+        "webhookId": "1f8e57ba-056e-42e6-be3f-6cc268b6809b"
+      },
+      {
+        "parameters": {
+          "workflowId": "8wRPpZ3xnwvD2fmj",
+          "options": {}
+        },
+        "id": "2",
+        "name": "ComplianceCheck",
+        "position": [
+          208,
+          0
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "ooh-id",
+                "leftValue": "={{ $json.reason }}",
+                "operator": {
+                  "operation": "equals",
+                  "type": "string"
+                },
+                "rightValue": "outside_allowed_hours"
+              }
+            ],
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            }
+          },
+          "options": {}
+        },
+        "id": "3",
+        "name": "IsOutOfHours",
+        "position": [
+          400,
+          0
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "workflowId": "1fAXwkLkftHAc1Wy",
+          "options": {}
+        },
+        "id": "4",
+        "name": "LogOOH",
+        "position": [
+          672,
+          -224
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "Hola, gracias por escribirnos fuera de horario. ¿En qué podemos ayudarte? Mientras tanto, cuéntanos tu nombre.",
+          "options": {}
+        },
+        "id": "5",
+        "name": "AINurtureBot",
+        "position": [
+          656,
+          -32
+        ],
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "status",
+                "type": "string",
+                "value": "new_lead_business_hours"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "6",
+        "name": "SalesHandoff",
+        "position": [
+          592,
+          320
+        ],
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "7",
+        "name": "GeminiModel",
+        "position": [
+          640,
+          144
+        ],
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1
+      },
+      {
+        "parameters": {},
+        "id": "8",
+        "name": "SimpleMemory",
+        "position": [
+          784,
+          176
+        ],
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3
+      }
+    ],
+    "connections": {
+      "AINurtureBot": {
+        "main": [
+          []
+        ]
+      },
+      "ComplianceCheck": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "IsOutOfHours",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "GeminiModel": {
+        "ai_languageModel": [
+          [
+            {
+              "index": 0,
+              "node": "AINurtureBot",
+              "type": "ai_languageModel"
+            }
+          ]
+        ]
+      },
+      "InboundTrigger": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "ComplianceCheck",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "IsOutOfHours": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "LogOOH",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "AINurtureBot",
+              "type": "main"
+            }
+          ],
+          [
+            {
+              "index": 0,
+              "node": "SalesHandoff",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "LogOOH": {
+        "main": [
+          []
+        ]
+      },
+      "SalesHandoff": {
+        "main": [
+          []
+        ]
+      },
+      "SimpleMemory": {
+        "ai_memory": [
+          [
+            {
+              "index": 0,
+              "node": "AINurtureBot",
+              "type": "ai_memory"
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Alef Lemat",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-23T05:50:41.686Z",
+        "id": 58,
+        "workflowId": "GW3a7UKhd46yNMdP",
+        "versionId": "d9a55a2d-94d3-418e-8083-d9b0b642e9fe",
+        "event": "activated",
+        "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660"
+      }
+    ]
+  }
+}

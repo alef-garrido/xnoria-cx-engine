@@ -163,7 +163,7 @@ Este contrato:
 
 ---
 
-## 4. Flujo de datos (secuencia exacta)
+## 4. Flujo de datos
 
 ```csharp
 [External Input]

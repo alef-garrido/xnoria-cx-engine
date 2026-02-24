@@ -1,6 +1,6 @@
 # INTERFACE: CRMAdapter_v1
 
-This interface defines the contract for interacting with Lead Management Systems (HighLevel, Salesforce, Hubspot) in the ROYA v1 system.
+This interface defines the contract for interacting with Lead Management Systems (HighLevel, Salesforce, Hubspot) in the cxEngine v1 system.
 
 ## METHODS
 
@@ -24,5 +24,5 @@ This interface defines the contract for interacting with Lead Management Systems
 
 ## IMPLEMENTATION GUIDELINES
 - Must ensure idempotency (e.g., deduplicating by phone).
-- Must sync ROYA internal status to CRM-specific stages/statuses.
+- Must sync cxEngine internal status to CRM-specific stages/statuses.
 - Must log all CRM interactions for auditability.

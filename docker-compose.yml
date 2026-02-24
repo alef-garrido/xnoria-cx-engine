@@ -1,0 +1,28 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-cxEngine-engine
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=${cxEngine_DOMAIN:-localhost}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://${cxEngine_DOMAIN:-localhost}:5678/
+      - GENERIC_TIMEZONE=${TZ:-UTC}
+      # Loading variables from the .env file
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - META_APP_ID=${META_APP_ID}
+      - META_APP_SECRET=${META_APP_SECRET}
+      - META_LONG_LIVED_TOKEN=${META_LONG_LIVED_TOKEN}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/home/node/workflows:ro
+    env_file:
+      - .env
+
+volumes:
+  n8n_data:
+    external: false

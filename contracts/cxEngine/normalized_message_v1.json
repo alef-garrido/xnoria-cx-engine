@@ -1,8 +1,8 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "https://xnoria.dev/schemas/roya/normalized_message_v1.json",
-    "title": "ROYA Normalized Message v1",
-    "description": "Standardized format for incoming and outgoing messages in ROYA v1.",
+    "$id": "https://xnoria.dev/schemas/cxEngine/normalized_message_v1.json",
+    "title": "cxEngine Normalized Message v1",
+    "description": "Standardized format for incoming and outgoing messages in cxEngine v1.",
     "type": "object",
     "required": [
         "message_id",

@@ -1,6 +1,6 @@
-# ROYA Analytics & Metrics Framework v1
+# cxEngine Analytics & Metrics Framework v1
 
-This document defines how metrics are emitted and tracked across all ROYA engines.
+This document defines how metrics are emitted and tracked across all cxEngine engines.
 
 ## 1. Canonical Event Schema (`MetricsEntry_v1`)
 

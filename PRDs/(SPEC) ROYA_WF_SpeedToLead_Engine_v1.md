@@ -4,7 +4,7 @@
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Speed To Lead Android  
+**Dominio:** cxEngine / Speed To Lead Android  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM)
 
 ---
@@ -18,7 +18,7 @@ Motor de respuesta inmediata a leads frescos que garantiza contacto en <60 segun
 ```
 Lead Opt-In (Webhook) → Validation → Immediate Acknowledgment → Qualification Loop → Routing → CRM Sync
                               ↓
-                    [ROYA Shared Components]
+                    [cxEngine Shared Components]
                     - Lead Schema v1
                     - ChannelAdapter
                     - ComplianceGuardrails
@@ -120,7 +120,7 @@ Como sistema de velocidad al lead, quiero recibir leads frescos desde cualquier 
 - [ ] Soporte para webhook POST con payload JSON estandarizado
 - [ ] Validación de campos obligatorios: `phone` (E.164), `source`, `timestamp`, `consent_flag`
 - [ ] Rechazo inmediato de leads sin consentimiento explícito (`consent_flag: false`)
-- [ ] Normalización a `Lead_v1` schema de ROYA Shared Components
+- [ ] Normalización a `Lead_v1` schema de cxEngine Shared Components
 - [ ] Asignación de `status: "new"` y `source: "fresh_optin"`
 - [ ] Logging de leads rechazados con razón clara para debugging
 - [ ] Throughput: ≥ 500 leads/minuto en ingestión
@@ -666,7 +666,7 @@ FUNCTION emit_speed_to_lead_metrics(lead: Lead_v1, event: ENUM, meta OBJECT):
 
 ## 7. Technical Specifications
 
-### 7.1 Contratos Extendidos (sobre ROYA Shared Components)
+### 7.1 Contratos Extendidos (sobre cxEngine Shared Components)
 
 #### FreshLeadInput Schema (extensión de Lead_v1)
 ```json
@@ -1036,7 +1036,7 @@ signal_patterns:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define el segundo Android de ROYA: el motor de velocidad que convierte leads frescos en oportunidades calificadas antes de que la competencia pueda reaccionar.  
-> Cada componente debe reutilizar ROYA_Shared_Components_v1 — nada de duplicar lógica.  
+> Este SPEC define el segundo Android de cxEngine: el motor de velocidad que convierte leads frescos en oportunidades calificadas antes de que la competencia pueda reaccionar.  
+> Cada componente debe reutilizar cxEngine_Shared_Components_v1 — nada de duplicar lógica.  
 > La clave del éxito no es la IA, es la **velocidad consistente** + **compliance estricto** + **routing inteligente**.  
 > Si algo no encaja en este spec, pregunta: "¿Esto ayuda a contactar leads más rápido de forma compliant y medible?" antes de implementarlo.

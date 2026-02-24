@@ -1,0 +1,981 @@
+{
+  "updatedAt": "2026-02-24T02:07:39.749Z",
+  "createdAt": "2026-02-23T05:53:26.356Z",
+  "id": "9NPCbbzsmWRlHmTZ",
+  "name": "cxEngine_WF_SleepingBeauty_Ingestion_Engine_V1_Final",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cxEngine-dbr-ingestion-v1-final",
+        "options": {}
+      },
+      "id": "trigger-id-abc",
+      "name": "IngestionTrigger",
+      "position": [
+        -16,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "a8a533c6-6bb8-49ab-8442-a0e78e3af7bb"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: { ...$json.body, event: \"EVT-SB-01\", trace_id: $json.trace_id || Math.random().toString(36).substr(2, 9) } };"
+      },
+      "id": "ede545ff-d8a4-465e-8509-4ea2eab966c7",
+      "name": "Emit_EVT_SB_01",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json;const errors = [];if (!input.lead_id && !input.id && !input.email && !input.phone) errors.push(\"Missing lead identifier (lead_id, email, or phone)\");if (errors.length > 0) { throw new Error(\"Invalid Lead Schema: \" + errors.join(\", \")); }let phone = input.phone || \"\";if (phone && !phone.startsWith('+')) phone = '+' + phone;return { json: { ...input, lead_id: input.lead_id || input.id || \"uuid-\" + Math.random().toString(36).substring(7), phone: phone, source: input.source || \"db_retention\", status: input.status || \"new\", created_at: input.created_at || new Date().toISOString(), schema_version: \"v1\", metadata: input.metadata || {} } };"
+      },
+      "id": "77f605ba-4571-4cd8-8047-ee2bda9ae6e6",
+      "name": "NormalizeDBR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.email || ($json.phone + '@cxEngine.placeholder.com') }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "cxEngine_status",
+                "value": "sleeping"
+              },
+              {
+                "property": "cxEngine_trace_id",
+                "value": "={{ $json.trace_id }}"
+              }
+            ]
+          }
+        },
+        "options": {}
+      },
+      "id": "52874e13-8452-4e4e-beec-79cfe865733d",
+      "name": "HubSpotSync",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "position": [
+        544,
+        0
+      ],
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "lKebO1ooj9gcGD8V",
+          "name": "HubSpot App Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "cxEngine_WF_Compliance_Guardrails_v1",
+          "mode": "list",
+          "value": "8wRPpZ3xnwvD2fmj"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "consent_verified": "={{ $('NormalizeDBR').item.json.consent_verified }}",
+            "lead_id": "={{ $('NormalizeDBR').item.json.lead_id }}",
+            "phone": "={{ $('NormalizeDBR').item.json.phone }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "7b1ab1fc-bbcd-4b52-b1d4-f3cb32588bc3",
+      "name": "ComplianceCheck",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        768,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "allowed-cond-id",
+              "leftValue": "={{ $json.allowed }}",
+              "operator": {
+                "operation": "equals",
+                "type": "boolean"
+              },
+              "rightValue": true
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "d4bcd93c-9488-4a81-955a-0ea7f1005fc1",
+      "name": "IsAllowed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages"
+      },
+      "id": "682d428e-3c8a-4948-b177-867308ff1b4e",
+      "name": "SendMessage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1168,
+        -208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "return { json: { ...$json, event: \"EVT-SB-02\", status: \"kiss.sent\", trace_id: $('IngestionTrigger').first().json.trace_id } };"
+      },
+      "id": "26c0e02a-ee4c-42f8-bca2-1bc6d26fc089",
+      "name": "Emit_EVT_SB_02",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "counter"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "value": "sb_dbr_ingested"
+            },
+            {
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $json.lead_id }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "2afb1825-5d6c-4cf7-a2ca-01a8fb3f02aa",
+      "name": "Set_Metrics_Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1568,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+          "mode": "list",
+          "value": "1fAXwkLkftHAc1Wy"
+        },
+        "workflowInputs": {
+          "mappingMode": "passThrough"
+        },
+        "options": {}
+      },
+      "id": "5b4536af-932b-4f02-a1bd-e1f1e2458ddb",
+      "name": "LogTrigger",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1760,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "channel",
+              "type": "string",
+              "value": "whatsapp"
+            },
+            {
+              "name": "final_action.type",
+              "type": "string",
+              "value": "PROVIDE_INFO"
+            },
+            {
+              "name": "final_action.payload.message",
+              "type": "string",
+              "value": "Kiss sent"
+            },
+            {
+              "name": "meta.version",
+              "type": "string",
+              "value": "v1"
+            },
+            {
+              "name": "meta.trace_id",
+              "type": "string",
+              "value": "={{ $('IngestionTrigger').first().json.trace_id }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "f99dbd61-a00c-4ec5-b172-622da25c7e90",
+      "name": "Set_Final_Action_Wrapper",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1968,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "leads",
+        "options": {}
+      },
+      "id": "19ffa21b-7b28-4a53-9400-6bb4ecce00e1",
+      "name": "SplitLeads",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        400,
+        -160
+      ]
+    },
+    {
+      "id": "632cfa77-a86c-462d-8853-cc7516f3c2d7",
+      "name": "ManualTriggerTest",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        -208
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "IngestionTrigger": {
+      "main": [
+        [
+          {
+            "node": "Emit_EVT_SB_01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emit_EVT_SB_01": {
+      "main": [
+        [
+          {
+            "node": "SplitLeads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NormalizeDBR": {
+      "main": [
+        [
+          {
+            "node": "HubSpotSync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpotSync": {
+      "main": [
+        [
+          {
+            "node": "ComplianceCheck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ComplianceCheck": {
+      "main": [
+        [
+          {
+            "node": "IsAllowed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsAllowed": {
+      "main": [
+        [
+          {
+            "node": "SendMessage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendMessage": {
+      "main": [
+        [
+          {
+            "node": "Emit_EVT_SB_02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Emit_EVT_SB_02": {
+      "main": [
+        [
+          {
+            "node": "Set_Metrics_Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set_Metrics_Payload": {
+      "main": [
+        [
+          {
+            "node": "LogTrigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LogTrigger": {
+      "main": [
+        [
+          {
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SplitLeads": {
+      "main": [
+        [
+          {
+            "node": "NormalizeDBR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ManualTriggerTest": {
+      "main": [
+        [
+          {
+            "node": "Emit_EVT_SB_01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "4725ce12-89d9-4382-b558-52422a125a16",
+  "activeVersionId": "4725ce12-89d9-4382-b558-52422a125a16",
+  "versionCounter": 93,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-23T05:53:26.360Z",
+      "createdAt": "2026-02-23T05:53:26.360Z",
+      "role": "workflow:owner",
+      "workflowId": "9NPCbbzsmWRlHmTZ",
+      "projectId": "71tFcDH72aEitFP0",
+      "project": {
+        "updatedAt": "2025-07-31T21:28:42.018Z",
+        "createdAt": "2025-07-29T22:02:28.078Z",
+        "id": "71tFcDH72aEitFP0",
+        "name": "Alef Lemat <lemat.garrido@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-29T22:02:28.078Z",
+            "createdAt": "2025-07-29T22:02:28.078Z",
+            "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+            "projectId": "71tFcDH72aEitFP0",
+            "user": {
+              "updatedAt": "2026-02-24T05:11:54.000Z",
+              "createdAt": "2025-07-29T22:02:27.451Z",
+              "id": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+              "email": "lemat.garrido@gmail.com",
+              "firstName": "Alef",
+              "lastName": "Lemat",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-31T21:29:16.642Z",
+                "personalization_survey_n8n_version": "1.104.1",
+                "companySize": "personalUser",
+                "companyType": "education",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "5F73gZtFAey5TB8FGO4zY",
+                "userActivatedAt": 1770249600538,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 2,
+                  "lastShownAt": 1771568167997
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-23",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-02-24T02:07:39.751Z",
+    "createdAt": "2026-02-24T02:07:39.751Z",
+    "versionId": "4725ce12-89d9-4382-b558-52422a125a16",
+    "workflowId": "9NPCbbzsmWRlHmTZ",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "cxEngine-dbr-ingestion-v1-final",
+          "options": {}
+        },
+        "id": "trigger-id-abc",
+        "name": "IngestionTrigger",
+        "position": [
+          -16,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "webhookId": "a8a533c6-6bb8-49ab-8442-a0e78e3af7bb"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "return { json: { ...$json.body, event: \"EVT-SB-01\", trace_id: $json.trace_id || Math.random().toString(36).substr(2, 9) } };"
+        },
+        "id": "ede545ff-d8a4-465e-8509-4ea2eab966c7",
+        "name": "Emit_EVT_SB_01",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          160,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const input = $json;const errors = [];if (!input.lead_id && !input.id && !input.email && !input.phone) errors.push(\"Missing lead identifier (lead_id, email, or phone)\");if (errors.length > 0) { throw new Error(\"Invalid Lead Schema: \" + errors.join(\", \")); }let phone = input.phone || \"\";if (phone && !phone.startsWith('+')) phone = '+' + phone;return { json: { ...input, lead_id: input.lead_id || input.id || \"uuid-\" + Math.random().toString(36).substring(7), phone: phone, source: input.source || \"db_retention\", status: input.status || \"new\", created_at: input.created_at || new Date().toISOString(), schema_version: \"v1\", metadata: input.metadata || {} } };"
+        },
+        "id": "77f605ba-4571-4cd8-8047-ee2bda9ae6e6",
+        "name": "NormalizeDBR",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          352,
+          0
+        ]
+      },
+      {
+        "parameters": {
+          "authentication": "appToken",
+          "email": "={{ $json.email || ($json.phone + '@cxEngine.placeholder.com') }}",
+          "additionalFields": {
+            "customPropertiesUi": {
+              "customPropertiesValues": [
+                {
+                  "property": "cxEngine_status",
+                  "value": "sleeping"
+                },
+                {
+                  "property": "cxEngine_trace_id",
+                  "value": "={{ $json.trace_id }}"
+                }
+              ]
+            }
+          },
+          "options": {}
+        },
+        "id": "52874e13-8452-4e4e-beec-79cfe865733d",
+        "name": "HubSpotSync",
+        "type": "n8n-nodes-base.hubspot",
+        "typeVersion": 2.2,
+        "position": [
+          544,
+          0
+        ],
+        "credentials": {
+          "hubspotAppToken": {
+            "id": "lKebO1ooj9gcGD8V",
+            "name": "HubSpot App Token account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "cxEngine_WF_Compliance_Guardrails_v1",
+            "mode": "list",
+            "value": "8wRPpZ3xnwvD2fmj"
+          },
+          "workflowInputs": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "consent_verified": "={{ $('NormalizeDBR').item.json.consent_verified }}",
+              "lead_id": "={{ $('NormalizeDBR').item.json.lead_id }}",
+              "phone": "={{ $('NormalizeDBR').item.json.phone }}"
+            }
+          },
+          "options": {}
+        },
+        "id": "7b1ab1fc-bbcd-4b52-b1d4-f3cb32588bc3",
+        "name": "ComplianceCheck",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          768,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "allowed-cond-id",
+                "leftValue": "={{ $json.allowed }}",
+                "operator": {
+                  "operation": "equals",
+                  "type": "boolean"
+                },
+                "rightValue": true
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          },
+          "options": {}
+        },
+        "id": "d4bcd93c-9488-4a81-955a-0ea7f1005fc1",
+        "name": "IsAllowed",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          960,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "url": "=https://graph.facebook.com/v21.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages"
+        },
+        "id": "682d428e-3c8a-4948-b177-867308ff1b4e",
+        "name": "SendMessage",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          1168,
+          -208
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "return { json: { ...$json, event: \"EVT-SB-02\", status: \"kiss.sent\", trace_id: $('IngestionTrigger').first().json.trace_id } };"
+        },
+        "id": "26c0e02a-ee4c-42f8-bca2-1bc6d26fc089",
+        "name": "Emit_EVT_SB_02",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1360,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "type",
+                "type": "string",
+                "value": "counter"
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "value": "sb_dbr_ingested"
+              },
+              {
+                "name": "lead_id",
+                "type": "string",
+                "value": "={{ $json.lead_id }}"
+              }
+            ]
+          },
+          "options": {
+            "dotNotation": true
+          }
+        },
+        "id": "2afb1825-5d6c-4cf7-a2ca-01a8fb3f02aa",
+        "name": "Set_Metrics_Payload",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1568,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+            "mode": "list",
+            "value": "1fAXwkLkftHAc1Wy"
+          },
+          "workflowInputs": {
+            "mappingMode": "passThrough"
+          },
+          "options": {}
+        },
+        "id": "5b4536af-932b-4f02-a1bd-e1f1e2458ddb",
+        "name": "LogTrigger",
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3,
+        "position": [
+          1760,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "response_id",
+                "type": "string",
+                "value": "={{ $execution.id }}"
+              },
+              {
+                "name": "timestamp",
+                "type": "string",
+                "value": "={{ new Date().toISOString() }}"
+              },
+              {
+                "name": "channel",
+                "type": "string",
+                "value": "whatsapp"
+              },
+              {
+                "name": "final_action.type",
+                "type": "string",
+                "value": "PROVIDE_INFO"
+              },
+              {
+                "name": "final_action.payload.message",
+                "type": "string",
+                "value": "Kiss sent"
+              },
+              {
+                "name": "meta.version",
+                "type": "string",
+                "value": "v1"
+              },
+              {
+                "name": "meta.trace_id",
+                "type": "string",
+                "value": "={{ $('IngestionTrigger').first().json.trace_id }}"
+              }
+            ]
+          },
+          "options": {
+            "dotNotation": true
+          }
+        },
+        "id": "f99dbd61-a00c-4ec5-b172-622da25c7e90",
+        "name": "Set_Final_Action_Wrapper",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          1968,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "fieldToSplitOut": "leads",
+          "options": {}
+        },
+        "id": "19ffa21b-7b28-4a53-9400-6bb4ecce00e1",
+        "name": "SplitLeads",
+        "type": "n8n-nodes-base.splitOut",
+        "typeVersion": 1,
+        "position": [
+          400,
+          -160
+        ]
+      },
+      {
+        "id": "632cfa77-a86c-462d-8853-cc7516f3c2d7",
+        "name": "ManualTriggerTest",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [
+          -16,
+          -208
+        ],
+        "parameters": {}
+      }
+    ],
+    "connections": {
+      "IngestionTrigger": {
+        "main": [
+          [
+            {
+              "node": "Emit_EVT_SB_01",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Emit_EVT_SB_01": {
+        "main": [
+          [
+            {
+              "node": "SplitLeads",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "NormalizeDBR": {
+        "main": [
+          [
+            {
+              "node": "HubSpotSync",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "HubSpotSync": {
+        "main": [
+          [
+            {
+              "node": "ComplianceCheck",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "ComplianceCheck": {
+        "main": [
+          [
+            {
+              "node": "IsAllowed",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "IsAllowed": {
+        "main": [
+          [
+            {
+              "node": "SendMessage",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SendMessage": {
+        "main": [
+          [
+            {
+              "node": "Emit_EVT_SB_02",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Emit_EVT_SB_02": {
+        "main": [
+          [
+            {
+              "node": "Set_Metrics_Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Set_Metrics_Payload": {
+        "main": [
+          [
+            {
+              "node": "LogTrigger",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LogTrigger": {
+        "main": [
+          [
+            {
+              "node": "Set_Final_Action_Wrapper",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SplitLeads": {
+        "main": [
+          [
+            {
+              "node": "NormalizeDBR",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "ManualTriggerTest": {
+        "main": [
+          [
+            {
+              "node": "Emit_EVT_SB_01",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Alef Lemat",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-24T02:07:39.885Z",
+        "id": 97,
+        "workflowId": "9NPCbbzsmWRlHmTZ",
+        "versionId": "4725ce12-89d9-4382-b558-52422a125a16",
+        "event": "activated",
+        "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660"
+      }
+    ]
+  }
+}

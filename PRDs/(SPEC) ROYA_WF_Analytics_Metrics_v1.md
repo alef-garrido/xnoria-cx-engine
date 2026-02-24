@@ -1,10 +1,10 @@
 # 📄 Product Requirements Document (PRD) Técnico
 
-## ROYA_Analytics_Metrics_v1
+## cxEngine_Analytics_Metrics_v1
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Analytics & Metrics Framework  
+**Dominio:** cxEngine / Analytics & Metrics Framework  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM + BI)
 
 ---
@@ -12,7 +12,7 @@
 ## 1. Overview Técnico
 
 ### 1.1 Propósito del módulo
-Proveer un framework unificado de medición, análisis y optimización para todos los Androids de ROYA, permitiendo visibilidad en tiempo real del performance operativo, atribución de revenue y mejora continua basada en datos, sin acoplamiento a stack específico de BI.
+Proveer un framework unificado de medición, análisis y optimización para todos los Androids de cxEngine, permitiendo visibilidad en tiempo real del performance operativo, atribución de revenue y mejora continua basada en datos, sin acoplamiento a stack específico de BI.
 
 ### 1.2 Arquitectura de alto nivel
 ```
@@ -1015,7 +1015,7 @@ METRICS_EMITTER_BATCH_SIZE=100
 METRICS_EMITTER_FLUSH_INTERVAL_SECONDS=30
 
 # Collector Config
-METRICS_COLLECTOR_URL=https://metrics-collector.roya.internal
+METRICS_COLLECTOR_URL=https://metrics-collector.cxEngine.internal
 METRICS_COLLECTOR_API_KEY=xxx
 METRICS_COLLECTOR_TIMEOUT_MS=5000
 
@@ -1027,12 +1027,12 @@ AGGREGATION_K_ANONYMITY_MIN=10
 
 # Attribution Config
 ATTRIBUTION_ENABLED=true
-ATTRIBUTION_CRM_SYNC_URL=https://crm-sync.roya.internal
+ATTRIBUTION_CRM_SYNC_URL=https://crm-sync.cxEngine.internal
 ATTRIBUTION_DEFAULT_MODEL=last_touch
 ATTRIBUTION_WINDOW_HOURS=72
 
 # Query API Config
-QUERY_API_URL=https://metrics-api.roya.internal
+QUERY_API_URL=https://metrics-api.cxEngine.internal
 QUERY_API_CACHE_TTL_SECONDS=300
 QUERY_API_MAX_RESULTS=10000
 
@@ -1230,7 +1230,7 @@ alert_rules:
       group_by: ["android_id", "partner_id"]
     actions:
       - type: email
-        recipients: ["ops-alerts@partner.com", "support@roya.dev"]
+        recipients: ["ops-alerts@partner.com", "support@cxEngine.dev"]
         message_template: "ALERTA CRÍTICA: {partner_id}/{android_id} tiene response_rate de {value*100}% (threshold: 5%)"
       - type: slack
         webhook_url: "https://hooks.slack.com/xxx"
@@ -1273,7 +1273,7 @@ alert_rules:
 // === Pasos para instrumentar un nuevo Android con métricas ===
 
 1. IMPORTAR MetricsEmitter:
-   IMPORT MetricsEmitter FROM "@roya/analytics-metrics"
+   IMPORT MetricsEmitter FROM "@cxEngine/analytics-metrics"
 
 2. CONFIGURAR tags base en inicialización:
    const emitter = new MetricsEmitter({
@@ -1398,7 +1398,7 @@ query_api:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define el framework de analytics que cierra el ciclo de ROYA: sin medición, no hay optimización; sin atribución, no hay ROI visible.  
+> Este SPEC define el framework de analytics que cierra el ciclo de cxEngine: sin medición, no hay optimización; sin atribución, no hay ROI visible.  
 > Cada Android DEBE emitir métricas — no es opcional.  
 > La clave del éxito no es la complejidad del dashboard, es la **consistencia de emisión** + **privacidad por diseño** + **atribución accionable**.  
 > Si algo no encaja en este spec, pregunta: "¿Esto ayuda a medir, atribuir u optimizar de forma compliant y escalable?" antes de implementarlo.  

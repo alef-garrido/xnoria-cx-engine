@@ -1,0 +1,520 @@
+{
+  "updatedAt": "2026-02-23T06:19:24.635Z",
+  "createdAt": "2026-02-20T23:30:44.007Z",
+  "id": "ValcUJcBcfJkz79O",
+  "name": "cxEngine_WF_SpeedToLead_Engine_v1",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cxEngine-speed-to-lead-v1-fixed",
+        "options": {}
+      },
+      "id": "1",
+      "name": "WebhookTrigger",
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "webhookId": "33b77af5-94b5-4806-aa3a-a3b9f977e97e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body;\nreturn {\n  json: {\n    lead_id: body.id || Math.random().toString(36).substr(2, 9),\n    phone: body.phone,\n    name: body.name,\n    source: \"fresh_optin\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: {\n      original_payload: body,\n      niche: body.niche || \"clinica\"\n    }\n  }\n};"
+      },
+      "id": "2",
+      "name": "NormalizedLead",
+      "position": [
+        208,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "WF_Compliance_Guardrails_v1",
+          "mode": "list",
+          "value": "8wRPpZ3xnwvD2fmj"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "ComplianceCheck",
+      "position": [
+        400,
+        0
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "allowed-id",
+              "leftValue": "={{ $json.allowed }}",
+              "operator": {
+                "operation": "equals",
+                "type": "boolean"
+              },
+              "rightValue": true
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "IsAllowed",
+      "position": [
+        608,
+        0
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+          "mode": "list",
+          "value": "1fAXwkLkftHAc1Wy"
+        },
+        "options": {}
+      },
+      "id": "5",
+      "name": "LogTrigger",
+      "position": [
+        880,
+        -256
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpHeaderAuth",
+        "url": "=https://graph.facebook.com/v21.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID || 'YOUR_PHONE_NUMBER_ID' }}/messages"
+      },
+      "id": "6",
+      "name": "AckDelivery",
+      "position": [
+        880,
+        -32
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "e8A7T1p9mFzIK4Xn",
+          "name": "Meta WhatsApp API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+          "mode": "list",
+          "value": "1fAXwkLkftHAc1Wy"
+        },
+        "options": {}
+      },
+      "id": "7",
+      "name": "LogAcked",
+      "position": [
+        1136,
+        -32
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    }
+  ],
+  "connections": {
+    "AckDelivery": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogAcked",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "ComplianceCheck": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "IsAllowed",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IsAllowed": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogTrigger",
+            "type": "main"
+          },
+          {
+            "index": 0,
+            "node": "AckDelivery",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "NormalizedLead": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "ComplianceCheck",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "WebhookTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "NormalizedLead",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "821aee59-5c6c-49f8-9c78-0019bbb238e3",
+  "activeVersionId": "821aee59-5c6c-49f8-9c78-0019bbb238e3",
+  "versionCounter": 35,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-20T23:30:44.011Z",
+      "createdAt": "2026-02-20T23:30:44.011Z",
+      "role": "workflow:owner",
+      "workflowId": "ValcUJcBcfJkz79O",
+      "projectId": "71tFcDH72aEitFP0",
+      "project": {
+        "updatedAt": "2025-07-31T21:28:42.018Z",
+        "createdAt": "2025-07-29T22:02:28.078Z",
+        "id": "71tFcDH72aEitFP0",
+        "name": "Alef Lemat <lemat.garrido@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-29T22:02:28.078Z",
+            "createdAt": "2025-07-29T22:02:28.078Z",
+            "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+            "projectId": "71tFcDH72aEitFP0",
+            "user": {
+              "updatedAt": "2026-02-24T05:11:54.000Z",
+              "createdAt": "2025-07-29T22:02:27.451Z",
+              "id": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+              "email": "lemat.garrido@gmail.com",
+              "firstName": "Alef",
+              "lastName": "Lemat",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-31T21:29:16.642Z",
+                "personalization_survey_n8n_version": "1.104.1",
+                "companySize": "personalUser",
+                "companyType": "education",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "5F73gZtFAey5TB8FGO4zY",
+                "userActivatedAt": 1770249600538,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 2,
+                  "lastShownAt": 1771568167997
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-23",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-02-18T23:40:01.905Z",
+      "createdAt": "2026-02-18T23:40:01.905Z",
+      "id": "yo0Xc2h0aMzs7tfI",
+      "name": "xnoria-mvp-26"
+    }
+  ],
+  "activeVersion": {
+    "updatedAt": "2026-02-23T06:19:24.636Z",
+    "createdAt": "2026-02-23T06:19:24.636Z",
+    "versionId": "821aee59-5c6c-49f8-9c78-0019bbb238e3",
+    "workflowId": "ValcUJcBcfJkz79O",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "cxEngine-speed-to-lead-v1-fixed",
+          "options": {}
+        },
+        "id": "1",
+        "name": "WebhookTrigger",
+        "position": [
+          0,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1.1,
+        "webhookId": "33b77af5-94b5-4806-aa3a-a3b9f977e97e"
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $json.body;\nreturn {\n  json: {\n    lead_id: body.id || Math.random().toString(36).substr(2, 9),\n    phone: body.phone,\n    name: body.name,\n    source: \"fresh_optin\",\n    status: \"new\",\n    created_at: new Date().toISOString(),\n    schema_version: \"v1\",\n    metadata: {\n      original_payload: body,\n      niche: body.niche || \"clinica\"\n    }\n  }\n};"
+        },
+        "id": "2",
+        "name": "NormalizedLead",
+        "position": [
+          208,
+          0
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "WF_Compliance_Guardrails_v1",
+            "mode": "list",
+            "value": "8wRPpZ3xnwvD2fmj"
+          },
+          "options": {}
+        },
+        "id": "3",
+        "name": "ComplianceCheck",
+        "position": [
+          400,
+          0
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "allowed-id",
+                "leftValue": "={{ $json.allowed }}",
+                "operator": {
+                  "operation": "equals",
+                  "type": "boolean"
+                },
+                "rightValue": true
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          },
+          "options": {}
+        },
+        "id": "4",
+        "name": "IsAllowed",
+        "position": [
+          608,
+          0
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+            "mode": "list",
+            "value": "1fAXwkLkftHAc1Wy"
+          },
+          "options": {}
+        },
+        "id": "5",
+        "name": "LogTrigger",
+        "position": [
+          880,
+          -256
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "authentication": "predefinedCredentialType",
+          "nodeCredentialType": "httpHeaderAuth",
+          "url": "=https://graph.facebook.com/v21.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID || 'YOUR_PHONE_NUMBER_ID' }}/messages"
+        },
+        "id": "6",
+        "name": "AckDelivery",
+        "position": [
+          880,
+          -32
+        ],
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "e8A7T1p9mFzIK4Xn",
+            "name": "Meta WhatsApp API"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+            "mode": "list",
+            "value": "1fAXwkLkftHAc1Wy"
+          },
+          "options": {}
+        },
+        "id": "7",
+        "name": "LogAcked",
+        "position": [
+          1136,
+          -32
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      }
+    ],
+    "connections": {
+      "AckDelivery": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "LogAcked",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "ComplianceCheck": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "IsAllowed",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "IsAllowed": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "LogTrigger",
+              "type": "main"
+            },
+            {
+              "index": 0,
+              "node": "AckDelivery",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "NormalizedLead": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "ComplianceCheck",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "WebhookTrigger": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "NormalizedLead",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Alef Lemat",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-23T06:19:24.714Z",
+        "id": 77,
+        "workflowId": "ValcUJcBcfJkz79O",
+        "versionId": "821aee59-5c6c-49f8-9c78-0019bbb238e3",
+        "event": "activated",
+        "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660"
+      }
+    ]
+  }
+}

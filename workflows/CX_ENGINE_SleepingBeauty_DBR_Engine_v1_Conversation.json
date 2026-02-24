@@ -1,0 +1,861 @@
+{
+  "updatedAt": "2026-02-23T09:16:06.713Z",
+  "createdAt": "2026-02-20T23:32:13.030Z",
+  "id": "8ov3u2FcgYPYTdwJ",
+  "name": "cxEngine_WF_SleepingBeauty_DBR_Engine_v1_Conversation",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cxEngine-dbr-conversation-v1-sync",
+        "options": {}
+      },
+      "id": "1",
+      "name": "WhatsAppTrigger",
+      "position": [
+        -32,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "webhookId": "c32fdfea-85c1-4790-a801-108629eaa94c"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "WF_Compliance_Guardrails_v1",
+          "mode": "list",
+          "value": "8wRPpZ3xnwvD2fmj"
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "ComplianceCheck",
+      "position": [
+        208,
+        -96
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "allowed-id",
+              "leftValue": "={{ $json.allowed }}",
+              "operator": {
+                "operation": "equals",
+                "type": "boolean"
+              },
+              "rightValue": true
+            }
+          ],
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          }
+        },
+        "options": {}
+      },
+      "id": "is-allowed",
+      "name": "IsAllowed",
+      "position": [
+        400,
+        -96
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "return { json: { ...$json, event: \"EVT-SB-03\", trace_id: $json.trace_id || Math.random().toString(36).substr(2, 9) } };"
+      },
+      "id": "evt-03",
+      "name": "Emit_EVT_SB_03",
+      "position": [
+        624,
+        -208
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('WhatsAppTrigger').item.json.body.message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres el Sleeping Beauty Response Agent de CX Engine Pro.\nTu objetivo es procesar respuestas de leads (WhatsApp) y convertirlas en decisiones estructuradas siguiendo el \"Decision Contract v1\".\n\nJSON SCHEMA (Decision Contract v1):\n{\n  \"comprehension\": { \"is_understandable\": boolean, \"notes\": string },\n  \"relevance\": { \"is_relevant\": boolean, \"notes\": string },\n  \"intent\": { \"primary\": \"ASK_INFO\"|\"REQUEST_ACTION\"|\"SCHEDULE\"|\"COMPLAINT\"|\"SUPPORT\"|\"UNKNOWN\", \"confidence\": \"low\"|\"medium\"|\"high\" },\n  \"user_states\": [\"string\"],\n  \"risk\": { \"level\": \"NONE\"|\"LOW\"|\"MEDIUM\"|\"HIGH\"|\"CRITICAL\", \"signals\": [\"string\"] },\n  \"missing_information\": [\"string\"],\n  \"decision\": { \"primary_action\": \"REQUEST_MORE_INFO\"|\"PROVIDE_INFO\"|\"LOG_AND_ROUTE\"|\"SCHEDULE_REQUEST\"|\"ESCALATE_HUMAN\"|\"REJECT_REQUEST\", \"reason\": \"string\" },\n  \"constraints_applied\": [\"string\"],\n  \"escalation\": { \"required\": boolean, \"reason\": \"string\" }\n}\n\nREGLAS CRÍTICAS:\n- Tu principal objetivo es determinar si el lead está interesado (calificado). Si está interesado, usa SCHEDULE_REQUEST.\n- Si no está interesado o está molesto, usa LOG_AND_ROUTE o REJECT_REQUEST.\n- Sé empático y persuasivo.\n- 'decision.reason' DEBE contener la respuesta de WhatsApp a enviar al usuario."
+        }
+      },
+      "id": "2",
+      "name": "ConversationManager",
+      "position": [
+        800,
+        -96
+      ],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"comprehension\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_understandable\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"relevance\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_relevant\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"intent\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary\": {\"type\": \"string\", \"enum\": [\"ASK_INFO\", \"REQUEST_ACTION\", \"SCHEDULE\", \"COMPLAINT\", \"SUPPORT\", \"UNKNOWN\"]},\n        \"confidence\": {\"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"]}\n      }\n    },\n    \"user_states\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"risk\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"level\": {\"type\": \"string\", \"enum\": [\"NONE\", \"LOW\", \"MEDIUM\", \"HIGH\", \"CRITICAL\"]},\n        \"signals\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n      }\n    },\n    \"missing_information\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"decision\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary_action\": {\"type\": \"string\", \"enum\": [\"REQUEST_MORE_INFO\", \"PROVIDE_INFO\", \"LOG_AND_ROUTE\", \"SCHEDULE_REQUEST\", \"ESCALATE_HUMAN\", \"REJECT_REQUEST\"]},\n        \"reason\": {\"type\": \"string\"}\n      }\n    },\n    \"constraints_applied\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"escalation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"required\": {\"type\": \"boolean\"},\n        \"reason\": {\"type\": \"string\"}\n      }\n    }\n  },\n  \"required\": [\"comprehension\", \"relevance\", \"intent\", \"user_states\", \"risk\", \"decision\", \"constraints_applied\", \"escalation\"]\n}"
+      },
+      "id": "parser",
+      "name": "StructuredOutputParser",
+      "position": [
+        1008,
+        160
+      ],
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5",
+      "name": "GeminiModel",
+      "position": [
+        688,
+        160
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x9ft1JUWN6uIDtCN",
+          "name": "Google Gemini(PaLM) Api oa.garrido11"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "6",
+      "name": "SimpleMemory",
+      "position": [
+        848,
+        160
+      ],
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "jsCode": "return { json: { ...$json, event: \"EVT-SB-04\", status: \"qualified\" } };"
+      },
+      "id": "evt-04",
+      "name": "Emit_EVT_SB_04",
+      "position": [
+        1104,
+        -96
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $('WhatsAppTrigger').item.json.body.email || ($('WhatsAppTrigger').item.json.body.phone + '@cxEngine.placeholder.com') }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "cxEngine_status",
+                "value": "qualified"
+              },
+              {
+                "property": "cxEngine_decision_reason",
+                "value": "={{ $json.decision && $json.decision.reason ? $json.decision.reason : '' }}"
+              },
+              {
+                "property": "cxEngine_risk_level",
+                "value": "={{ $json.risk && $json.risk.level ? $json.risk.level : 'NONE' }}"
+              },
+              {
+                "property": "cxEngine_last_interaction",
+                "value": "={{ new Date().toISOString() }}"
+              }
+            ]
+          }
+        },
+        "options": {}
+      },
+      "id": "hubspot-conversation",
+      "name": "HubSpotSyncConversation",
+      "position": [
+        1296,
+        -96
+      ],
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.2,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "lKebO1ooj9gcGD8V",
+          "name": "HubSpot App Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "counter"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "value": "sb_dbr_interacted"
+            },
+            {
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $('WhatsAppTrigger').item.json.body.lead_id || \"anonymous\" }}"
+            }
+          ]
+        },
+        "options": {
+          "dotNotation": true
+        }
+      },
+      "id": "set-metrics",
+      "name": "Set_Metrics_Payload",
+      "position": [
+        1504,
+        -96
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+          "mode": "list",
+          "value": "1fAXwkLkftHAc1Wy"
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "LogInteraction",
+      "position": [
+        1712,
+        -96
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    }
+  ],
+  "connections": {
+    "ComplianceCheck": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "IsAllowed",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "ConversationManager": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Emit_EVT_SB_04",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Emit_EVT_SB_03": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "ConversationManager",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Emit_EVT_SB_04": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HubSpotSyncConversation",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "GeminiModel": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "ConversationManager",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "HubSpotSyncConversation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Metrics_Payload",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "IsAllowed": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Emit_EVT_SB_03",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Metrics_Payload": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogInteraction",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SimpleMemory": {
+      "ai_memory": [
+        [
+          {
+            "index": 0,
+            "node": "ConversationManager",
+            "type": "ai_memory"
+          }
+        ]
+      ]
+    },
+    "StructuredOutputParser": {
+      "ai_outputParser": [
+        [
+          {
+            "index": 0,
+            "node": "ConversationManager",
+            "type": "ai_outputParser"
+          }
+        ]
+      ]
+    },
+    "WhatsAppTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "ComplianceCheck",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "2040a7e9-860a-4498-89c1-b21d2c8e6cab",
+  "activeVersionId": "2040a7e9-860a-4498-89c1-b21d2c8e6cab",
+  "versionCounter": 51,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-20T23:32:13.032Z",
+      "createdAt": "2026-02-20T23:32:13.032Z",
+      "role": "workflow:owner",
+      "workflowId": "8ov3u2FcgYPYTdwJ",
+      "projectId": "71tFcDH72aEitFP0",
+      "project": {
+        "updatedAt": "2025-07-31T21:28:42.018Z",
+        "createdAt": "2025-07-29T22:02:28.078Z",
+        "id": "71tFcDH72aEitFP0",
+        "name": "Alef Lemat <lemat.garrido@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-29T22:02:28.078Z",
+            "createdAt": "2025-07-29T22:02:28.078Z",
+            "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+            "projectId": "71tFcDH72aEitFP0",
+            "user": {
+              "updatedAt": "2026-02-24T05:11:54.000Z",
+              "createdAt": "2025-07-29T22:02:27.451Z",
+              "id": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+              "email": "lemat.garrido@gmail.com",
+              "firstName": "Alef",
+              "lastName": "Lemat",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-31T21:29:16.642Z",
+                "personalization_survey_n8n_version": "1.104.1",
+                "companySize": "personalUser",
+                "companyType": "education",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "5F73gZtFAey5TB8FGO4zY",
+                "userActivatedAt": 1770249600538,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 2,
+                  "lastShownAt": 1771568167997
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-23",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-02-23T05:32:26.918Z",
+    "createdAt": "2026-02-23T05:32:26.918Z",
+    "versionId": "2040a7e9-860a-4498-89c1-b21d2c8e6cab",
+    "workflowId": "8ov3u2FcgYPYTdwJ",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "cxEngine-dbr-conversation-v1-sync",
+          "options": {}
+        },
+        "id": "1",
+        "name": "WhatsAppTrigger",
+        "position": [
+          -32,
+          0
+        ],
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1.1,
+        "webhookId": "c32fdfea-85c1-4790-a801-108629eaa94c"
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "WF_Compliance_Guardrails_v1",
+            "mode": "list",
+            "value": "8wRPpZ3xnwvD2fmj"
+          },
+          "options": {}
+        },
+        "id": "3",
+        "name": "ComplianceCheck",
+        "position": [
+          208,
+          -96
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "combinator": "and",
+            "conditions": [
+              {
+                "id": "allowed-id",
+                "leftValue": "={{ $json.allowed }}",
+                "operator": {
+                  "operation": "equals",
+                  "type": "boolean"
+                },
+                "rightValue": true
+              }
+            ],
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            }
+          },
+          "options": {}
+        },
+        "id": "is-allowed",
+        "name": "IsAllowed",
+        "position": [
+          400,
+          -96
+        ],
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2
+      },
+      {
+        "parameters": {
+          "jsCode": "return { json: { ...$json, event: \"EVT-SB-03\", trace_id: $json.trace_id || Math.random().toString(36).substr(2, 9) } };"
+        },
+        "id": "evt-03",
+        "name": "Emit_EVT_SB_03",
+        "position": [
+          624,
+          -208
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "={{ $('WhatsAppTrigger').item.json.body.message }}",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "Eres el Sleeping Beauty Response Agent de CX Engine Pro.\nTu objetivo es procesar respuestas de leads (WhatsApp) y convertirlas en decisiones estructuradas siguiendo el \"Decision Contract v1\".\n\nJSON SCHEMA (Decision Contract v1):\n{\n  \"comprehension\": { \"is_understandable\": boolean, \"notes\": string },\n  \"relevance\": { \"is_relevant\": boolean, \"notes\": string },\n  \"intent\": { \"primary\": \"ASK_INFO\"|\"REQUEST_ACTION\"|\"SCHEDULE\"|\"COMPLAINT\"|\"SUPPORT\"|\"UNKNOWN\", \"confidence\": \"low\"|\"medium\"|\"high\" },\n  \"user_states\": [\"string\"],\n  \"risk\": { \"level\": \"NONE\"|\"LOW\"|\"MEDIUM\"|\"HIGH\"|\"CRITICAL\", \"signals\": [\"string\"] },\n  \"missing_information\": [\"string\"],\n  \"decision\": { \"primary_action\": \"REQUEST_MORE_INFO\"|\"PROVIDE_INFO\"|\"LOG_AND_ROUTE\"|\"SCHEDULE_REQUEST\"|\"ESCALATE_HUMAN\"|\"REJECT_REQUEST\", \"reason\": \"string\" },\n  \"constraints_applied\": [\"string\"],\n  \"escalation\": { \"required\": boolean, \"reason\": \"string\" }\n}\n\nREGLAS CRÍTICAS:\n- Tu principal objetivo es determinar si el lead está interesado (calificado). Si está interesado, usa SCHEDULE_REQUEST.\n- Si no está interesado o está molesto, usa LOG_AND_ROUTE o REJECT_REQUEST.\n- Sé empático y persuasivo.\n- 'decision.reason' DEBE contener la respuesta de WhatsApp a enviar al usuario."
+          }
+        },
+        "id": "2",
+        "name": "ConversationManager",
+        "position": [
+          800,
+          -96
+        ],
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1
+      },
+      {
+        "parameters": {
+          "schemaType": "manual",
+          "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"comprehension\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_understandable\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"relevance\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"is_relevant\": {\"type\": \"boolean\"},\n        \"notes\": {\"type\": \"string\"}\n      }\n    },\n    \"intent\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary\": {\"type\": \"string\", \"enum\": [\"ASK_INFO\", \"REQUEST_ACTION\", \"SCHEDULE\", \"COMPLAINT\", \"SUPPORT\", \"UNKNOWN\"]},\n        \"confidence\": {\"type\": \"string\", \"enum\": [\"low\", \"medium\", \"high\"]}\n      }\n    },\n    \"user_states\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"risk\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"level\": {\"type\": \"string\", \"enum\": [\"NONE\", \"LOW\", \"MEDIUM\", \"HIGH\", \"CRITICAL\"]},\n        \"signals\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}\n      }\n    },\n    \"missing_information\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"decision\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"primary_action\": {\"type\": \"string\", \"enum\": [\"REQUEST_MORE_INFO\", \"PROVIDE_INFO\", \"LOG_AND_ROUTE\", \"SCHEDULE_REQUEST\", \"ESCALATE_HUMAN\", \"REJECT_REQUEST\"]},\n        \"reason\": {\"type\": \"string\"}\n      }\n    },\n    \"constraints_applied\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}},\n    \"escalation\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"required\": {\"type\": \"boolean\"},\n        \"reason\": {\"type\": \"string\"}\n      }\n    }\n  },\n  \"required\": [\"comprehension\", \"relevance\", \"intent\", \"user_states\", \"risk\", \"decision\", \"constraints_applied\", \"escalation\"]\n}"
+        },
+        "id": "parser",
+        "name": "StructuredOutputParser",
+        "position": [
+          1008,
+          160
+        ],
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "options": {}
+        },
+        "id": "5",
+        "name": "GeminiModel",
+        "position": [
+          688,
+          160
+        ],
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "credentials": {
+          "googlePalmApi": {
+            "id": "x9ft1JUWN6uIDtCN",
+            "name": "Google Gemini(PaLM) Api oa.garrido11"
+          }
+        }
+      },
+      {
+        "parameters": {},
+        "id": "6",
+        "name": "SimpleMemory",
+        "position": [
+          848,
+          160
+        ],
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "typeVersion": 1.3
+      },
+      {
+        "parameters": {
+          "jsCode": "return { json: { ...$json, event: \"EVT-SB-04\", status: \"qualified\" } };"
+        },
+        "id": "evt-04",
+        "name": "Emit_EVT_SB_04",
+        "position": [
+          1104,
+          -96
+        ],
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2
+      },
+      {
+        "parameters": {
+          "authentication": "appToken",
+          "email": "={{ $('WhatsAppTrigger').item.json.body.email || ($('WhatsAppTrigger').item.json.body.phone + '@cxEngine.placeholder.com') }}",
+          "additionalFields": {
+            "customPropertiesUi": {
+              "customPropertiesValues": [
+                {
+                  "property": "cxEngine_status",
+                  "value": "qualified"
+                },
+                {
+                  "property": "cxEngine_decision_reason",
+                  "value": "={{ $json.decision && $json.decision.reason ? $json.decision.reason : '' }}"
+                },
+                {
+                  "property": "cxEngine_risk_level",
+                  "value": "={{ $json.risk && $json.risk.level ? $json.risk.level : 'NONE' }}"
+                },
+                {
+                  "property": "cxEngine_last_interaction",
+                  "value": "={{ new Date().toISOString() }}"
+                }
+              ]
+            }
+          },
+          "options": {}
+        },
+        "id": "hubspot-conversation",
+        "name": "HubSpotSyncConversation",
+        "position": [
+          1296,
+          -96
+        ],
+        "type": "n8n-nodes-base.hubspot",
+        "typeVersion": 2.2,
+        "credentials": {
+          "hubspotAppToken": {
+            "id": "lKebO1ooj9gcGD8V",
+            "name": "HubSpot App Token account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "name": "type",
+                "type": "string",
+                "value": "counter"
+              },
+              {
+                "name": "name",
+                "type": "string",
+                "value": "sb_dbr_interacted"
+              },
+              {
+                "name": "lead_id",
+                "type": "string",
+                "value": "={{ $('WhatsAppTrigger').item.json.body.lead_id || \"anonymous\" }}"
+              }
+            ]
+          },
+          "options": {
+            "dotNotation": true
+          }
+        },
+        "id": "set-metrics",
+        "name": "Set_Metrics_Payload",
+        "position": [
+          1504,
+          -96
+        ],
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4
+      },
+      {
+        "parameters": {
+          "workflowId": {
+            "__rl": true,
+            "cachedResultName": "cxEngine_Analytics_Metrics_v1",
+            "mode": "list",
+            "value": "1fAXwkLkftHAc1Wy"
+          },
+          "options": {}
+        },
+        "id": "4",
+        "name": "LogInteraction",
+        "position": [
+          1712,
+          -96
+        ],
+        "type": "n8n-nodes-base.executeWorkflow",
+        "typeVersion": 1.3
+      }
+    ],
+    "connections": {
+      "ComplianceCheck": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "IsAllowed",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "ConversationManager": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Emit_EVT_SB_04",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Emit_EVT_SB_03": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "ConversationManager",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Emit_EVT_SB_04": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "HubSpotSyncConversation",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "GeminiModel": {
+        "ai_languageModel": [
+          [
+            {
+              "index": 0,
+              "node": "ConversationManager",
+              "type": "ai_languageModel"
+            }
+          ]
+        ]
+      },
+      "HubSpotSyncConversation": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Set_Metrics_Payload",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "IsAllowed": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "Emit_EVT_SB_03",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "Set_Metrics_Payload": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "LogInteraction",
+              "type": "main"
+            }
+          ]
+        ]
+      },
+      "SimpleMemory": {
+        "ai_memory": [
+          [
+            {
+              "index": 0,
+              "node": "ConversationManager",
+              "type": "ai_memory"
+            }
+          ]
+        ]
+      },
+      "StructuredOutputParser": {
+        "ai_outputParser": [
+          [
+            {
+              "index": 0,
+              "node": "ConversationManager",
+              "type": "ai_outputParser"
+            }
+          ]
+        ]
+      },
+      "WhatsAppTrigger": {
+        "main": [
+          [
+            {
+              "index": 0,
+              "node": "ComplianceCheck",
+              "type": "main"
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Alef Lemat",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-02-23T05:50:40.722Z",
+        "id": 55,
+        "workflowId": "8ov3u2FcgYPYTdwJ",
+        "versionId": "2040a7e9-860a-4498-89c1-b21d2c8e6cab",
+        "event": "activated",
+        "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660"
+      }
+    ]
+  }
+}

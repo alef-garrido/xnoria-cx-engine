@@ -1,10 +1,10 @@
 # 📄 Product Requirements Document (PRD) Técnico
 
-## ROYA_Shared_Components_v1
+## cxEngine_Shared_Components_v1
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Componentes Compartidos  
+**Dominio:** cxEngine / Componentes Compartidos  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM)
 
 ---
@@ -18,7 +18,7 @@ Proveer una capa de componentes reutilizables, agnósticos y contract-first que 
 ```
 [Android Specific Workflows]
            ↓
-[ROYA Shared Components Layer]
+[cxEngine Shared Components Layer]
            ↓
 [External Adapters: SMS, CRM, LLM, Vector Store]
 ```
@@ -310,7 +310,7 @@ INTERFACE CRMAdapter:
     METHOD update_status(lead_id: STRING, new_status: ENUM, reason: STRING) → BOOLEAN
         RETURNS: true si éxito, false si fallo
         BEHAVIOR:
-            - Mapea status ROYA a estado del CRM
+            - Mapea status cxEngine a estado del CRM
             - Registra reason en campo de notas del CRM
             - Log: "status_updated", lead_id, new_status
     
@@ -334,7 +334,7 @@ INTERFACE CRMAdapter:
             - Log: "appointment_scheduled", lead_id, success
     
     METHOD get_lead(lead_id: STRING) → Lead_v1 OR NULL
-        RETURNS: Lead en formato ROYA o NULL si no encontrado
+        RETURNS: Lead en formato cxEngine o NULL si no encontrado
         BEHAVIOR:
             - Consulta CRM por lead_id o phone
             - Mapea respuesta a Lead_v1
@@ -726,7 +726,7 @@ INTERFACE MetricsEmitter:
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://roya.dev/schemas/lead_v1.json",
+  "$id": "https://cxEngine.dev/schemas/lead_v1.json",
   "title": "Lead Schema v1",
   "type": "object",
   "required": ["lead_id", "phone", "source", "status", "created_at", "schema_version"],
@@ -837,11 +837,11 @@ CLASS TraceEmitter:
 
 ```bash
 # === Shared Components Config ===
-ROYA_SCHEMA_VERSION=v1
-ROYA_DEFAULT_TTL_SECONDS=86400
-ROYA_MAX_RETRY_ATTEMPTS=3
-ROYA_RETRY_BASE_DELAY_MS=1000
-ROYA_RETRY_MAX_DELAY_MS=60000
+cxEngine_SCHEMA_VERSION=v1
+cxEngine_DEFAULT_TTL_SECONDS=86400
+cxEngine_MAX_RETRY_ATTEMPTS=3
+cxEngine_RETRY_BASE_DELAY_MS=1000
+cxEngine_RETRY_MAX_DELAY_MS=60000
 
 # === Cache/State ===
 STATE_CACHE_PROVIDER=redis|memory
@@ -986,7 +986,7 @@ TEST Component latency under load:
 
 ### Appendix A: Mapeo de Estados de Lead (Cross-Android)
 
-| Estado ROYA | Sleeping Beauty | Speed To Lead | Out Of Hours | Document Collection |
+| Estado cxEngine | Sleeping Beauty | Speed To Lead | Out Of Hours | Document Collection |
 |-------------|----------------|---------------|--------------|-------------------|
 | `new` | Lead cargado de CSV, no contactado | Lead fresco de formulario, no contactado | Lead fuera de horario, en cola | Lead solicitó docs, no enviado |
 | `contacted` | Prince Charming Kiss enviado | Primer SMS de seguimiento enviado | Primer mensaje de nurturing enviado | Solicitud de docs enviada |
@@ -1082,7 +1082,7 @@ TEST Component latency under load:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define la "biblioteca estándar" de ROYA.  
+> Este SPEC define la "biblioteca estándar" de cxEngine.  
 > Cada Android futuro debe construirse **sobre** estos componentes, no **al lado** de ellos.  
 > La consistencia que logremos aquí es lo que permitirá escalar de 1 a 10 Androids sin multiplicar la complejidad.  
 > Si algo no encaja en este spec, primero pregunta: "¿Debería ser compartido?" antes de crear algo nuevo.

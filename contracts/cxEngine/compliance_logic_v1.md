@@ -1,6 +1,6 @@
-# ROYA Compliance Guardrails logic
+# cxEngine Compliance Guardrails logic
 
-This document outlines the logic for legal and ethical enforcement (TCPA, GDPR, etc.) in the ROYA v1 system.
+This document outlines the logic for legal and ethical enforcement (TCPA, GDPR, etc.) in the cxEngine v1 system.
 
 ## 1. Pre-Send Check Flow
 

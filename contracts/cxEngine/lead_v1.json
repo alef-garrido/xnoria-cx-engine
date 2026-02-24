@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://xnoria.dev/schemas/roya/lead_v1.json",
-  "title": "ROYA Lead v1",
-  "description": "Canonical lead schema for ROYA v1 system.",
+  "$id": "https://xnoria.dev/schemas/cxEngine/lead_v1.json",
+  "title": "cxEngine Lead v1",
+  "description": "Canonical lead schema for cxEngine v1 system.",
   "type": "object",
   "required": [
     "lead_id",

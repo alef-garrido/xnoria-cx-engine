@@ -1,0 +1,799 @@
+{
+  "updatedAt": "2026-02-23T05:13:59.443Z",
+  "createdAt": "2026-02-20T23:31:50.686Z",
+  "id": "y1ZwlqUYVjmR45dP",
+  "name": "WF_Email_Decision_Engine_v1_sync_final",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "1",
+      "name": "GmailTrigger",
+      "parameters": {
+        "filters": {
+          "q": "category:primary is:unread"
+        },
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "position": [
+        112,
+        208
+      ],
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1
+    },
+    {
+      "id": "2",
+      "name": "Normalization",
+      "parameters": {
+        "jsCode": "const input = $json.body || $json; \nconst snippet = input.snippet || input.textPlain || input.message || \"\";\nreturn {\n  json: {\n    input_id: \"id-\" + (input.id || input.messageId || Math.random().toString(36).substr(2, 9)),\n    channel: input.channel || \"email\",\n    message: snippet,\n    context_domain: \"clinic\",\n    metadata: {\n      from: input.From || input.from || \"unknown\",\n      subject: input.Subject || input.subject || \"Sin asunto\",\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+      },
+      "position": [
+        304,
+        208
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "3",
+      "name": "AIAgent",
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {},
+        "promptType": "define",
+        "text": "={{ $json.message }}"
+      },
+      "position": [
+        512,
+        208
+      ],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1
+    },
+    {
+      "id": "4",
+      "name": "GoogleGemini",
+      "parameters": {
+        "options": {}
+      },
+      "position": [
+        464,
+        416
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1
+    },
+    {
+      "id": "5",
+      "name": "TylaQTool",
+      "parameters": {
+        "description": "Knowledge search for clinic domain."
+      },
+      "position": [
+        528,
+        576
+      ],
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1.1
+    },
+    {
+      "id": "6",
+      "name": "PineconeStore",
+      "parameters": {
+        "options": {},
+        "pineconeIndex": {
+          "mode": "list",
+          "value": "demo-2026-clinic"
+        }
+      },
+      "position": [
+        368,
+        736
+      ],
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1
+    },
+    {
+      "id": "7",
+      "name": "EmbeddingsGemini",
+      "parameters": {
+        "modelName": "models/gemini-embedding-001"
+      },
+      "position": [
+        384,
+        896
+      ],
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1
+    },
+    {
+      "id": "8",
+      "name": "StructuredOutputParser",
+      "parameters": {
+        "schemaType": "manual"
+      },
+      "position": [
+        720,
+        416
+      ],
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "9",
+      "name": "SwitchAction",
+      "parameters": {
+        "options": {},
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "ESCALATE_HUMAN"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "PROVIDE_INFO"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "REQUEST_MORE_INFO"
+                  }
+                ]
+              }
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.decision.primary_action }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "REJECT_REQUEST"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "position": [
+        832,
+        176
+      ],
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "10",
+      "name": "IfCriticalRisk",
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output.risk.level }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "CRITICAL"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      },
+      "position": [
+        1024,
+        32
+      ],
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3
+    },
+    {
+      "id": "11",
+      "name": "SetCriticalEscalation",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "ESCALATE_HUMAN_CRITICAL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1232,
+        -32
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "12",
+      "name": "SetNormalEscalation",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "ESCALATE_HUMAN_NORMAL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1232,
+        128
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "13",
+      "name": "SetProvideInfo",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "PROVIDE_INFO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1024,
+        256
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "14",
+      "name": "SetRequestMoreInfo",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "REQUEST_MORE_INFO"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1024,
+        432
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "15",
+      "name": "SetRejection",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "REJECT_REQUEST"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1024,
+        608
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "16",
+      "name": "SetFinalWrapper",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        1488,
+        272
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "id": "17",
+      "name": "ComplianceCheck",
+      "parameters": {
+        "mode": "once",
+        "workflowId": "8wRPpZ3xnwvD2fmj"
+      },
+      "position": [
+        1664,
+        272
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "18",
+      "name": "LogDecision",
+      "parameters": {
+        "mode": "once",
+        "workflowId": "1fAXwkLkftHAc1Wy"
+      },
+      "position": [
+        1872,
+        272
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "19",
+      "name": "WebhookResponseFinal",
+      "parameters": {
+        "options": {}
+      },
+      "position": [
+        2064,
+        272
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1
+    },
+    {
+      "id": "20",
+      "name": "ManualTrigger",
+      "parameters": {},
+      "position": [
+        -96,
+        208
+      ],
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1
+    },
+    {
+      "id": "21",
+      "name": "Webhook",
+      "parameters": {
+        "httpMethod": "POST",
+        "options": {},
+        "path": "email-decision-v1-sync",
+        "responseMode": "call-individual-nodes"
+      },
+      "position": [
+        -96,
+        448
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1
+    },
+    {
+      "id": "22",
+      "name": "GroqChat",
+      "parameters": {
+        "model": "llama-3.3-70b-versatile",
+        "options": {}
+      },
+      "position": [
+        672,
+        736
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "AIAgent": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SwitchAction",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "ComplianceCheck": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogDecision",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "EmbeddingsGemini": {
+      "ai_embedding": [
+        [
+          {
+            "index": 0,
+            "node": "PineconeStore",
+            "type": "ai_embedding"
+          }
+        ]
+      ]
+    },
+    "GmailTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalization",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "GoogleGemini": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "AIAgent",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "GroqChat": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "TylaQTool",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "IfCriticalRisk": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetCriticalEscalation",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "SetNormalEscalation",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "LogDecision": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "WebhookResponseFinal",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "ManualTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalization",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Normalization": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "AIAgent",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "PineconeStore": {
+      "ai_vectorStore": [
+        [
+          {
+            "index": 0,
+            "node": "TylaQTool",
+            "type": "ai_vectorStore"
+          }
+        ]
+      ]
+    },
+    "SetCriticalEscalation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetFinalWrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SetFinalWrapper": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "ComplianceCheck",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SetNormalEscalation": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetFinalWrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SetProvideInfo": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetFinalWrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SetRejection": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetFinalWrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "SetRequestMoreInfo": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "SetFinalWrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "StructuredOutputParser": {
+      "ai_outputParser": [
+        [
+          {
+            "index": 0,
+            "node": "AIAgent",
+            "type": "ai_outputParser"
+          }
+        ]
+      ]
+    },
+    "SwitchAction": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "IfCriticalRisk",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "SetProvideInfo",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "SetRequestMoreInfo",
+            "type": "main"
+          }
+        ],
+        [
+          {
+            "index": 0,
+            "node": "SetRejection",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "TylaQTool": {
+      "ai_tool": [
+        [
+          {
+            "index": 0,
+            "node": "AIAgent",
+            "type": "ai_tool"
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Normalization",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": {},
+  "versionId": "24203420-72e3-4b2d-bbde-64b1c77ad446",
+  "activeVersionId": null,
+  "versionCounter": 18,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-02-20T23:31:50.712Z",
+      "createdAt": "2026-02-20T23:31:50.712Z",
+      "role": "workflow:owner",
+      "workflowId": "y1ZwlqUYVjmR45dP",
+      "projectId": "71tFcDH72aEitFP0",
+      "project": {
+        "updatedAt": "2025-07-31T21:28:42.018Z",
+        "createdAt": "2025-07-29T22:02:28.078Z",
+        "id": "71tFcDH72aEitFP0",
+        "name": "Alef Lemat <lemat.garrido@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+        "projectRelations": [
+          {
+            "updatedAt": "2025-07-29T22:02:28.078Z",
+            "createdAt": "2025-07-29T22:02:28.078Z",
+            "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+            "projectId": "71tFcDH72aEitFP0",
+            "user": {
+              "updatedAt": "2026-02-24T05:11:54.000Z",
+              "createdAt": "2025-07-29T22:02:27.451Z",
+              "id": "536f6c19-fd14-4a57-b85e-ff49981d7660",
+              "email": "lemat.garrido@gmail.com",
+              "firstName": "Alef",
+              "lastName": "Lemat",
+              "personalizationAnswers": {
+                "version": "v4",
+                "personalization_survey_submitted_at": "2025-07-31T21:29:16.642Z",
+                "personalization_survey_n8n_version": "1.104.1",
+                "companySize": "personalUser",
+                "companyType": "education",
+                "role": "business-owner",
+                "reportedSource": "youtube"
+              },
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "5F73gZtFAey5TB8FGO4zY",
+                "userActivatedAt": 1770249600538,
+                "npsSurvey": {
+                  "waitingForResponse": true,
+                  "ignoredCount": 2,
+                  "lastShownAt": 1771568167997
+                }
+              },
+              "disabled": false,
+              "mfaEnabled": false,
+              "lastActiveAt": "2026-02-23",
+              "isPending": false
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "tags": [
+    {
+      "updatedAt": "2026-02-18T23:40:01.905Z",
+      "createdAt": "2026-02-18T23:40:01.905Z",
+      "id": "yo0Xc2h0aMzs7tfI",
+      "name": "xnoria-mvp-26"
+    }
+  ],
+  "activeVersion": null
+}

@@ -4,7 +4,7 @@
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Out Of Hours Android  
+**Dominio:** cxEngine / Out Of Hours Android  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM)
 
 ---
@@ -18,7 +18,7 @@ Motor de gestión inteligente de leads que contactan fuera del horario laboral, 
 ```
 Lead Contact (Fuera de Horas) → Time Detection → Acknowledgment + Nurturing → Queue for Handoff → CRM Sync → Next-Day Routing
                               ↓
-                    [ROYA Shared Components]
+                    [cxEngine Shared Components]
                     - Lead Schema v1
                     - ChannelAdapter
                     - ComplianceGuardrails
@@ -633,7 +633,7 @@ FUNCTION emit_ooo_metrics(lead: Lead_v1, event: ENUM, meta OBJECT):
 
 ## 7. Technical Specifications
 
-### 7.1 Contratos Extendidos (sobre ROYA Shared Components)
+### 7.1 Contratos Extendidos (sobre cxEngine Shared Components)
 
 #### TimeDecision Schema
 ```json
@@ -1067,7 +1067,7 @@ compliance_hours_by_region:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define el tercer Android de ROYA: el motor que convierte contactos fuera de horas en oportunidades preservadas, sin violar compliance ni perder engagement.  
-> Cada componente debe reutilizar ROYA_Shared_Components_v1 — nada de duplicar lógica.  
+> Este SPEC define el tercer Android de cxEngine: el motor que convierte contactos fuera de horas en oportunidades preservadas, sin violar compliance ni perder engagement.  
+> Cada componente debe reutilizar cxEngine_Shared_Components_v1 — nada de duplicar lógica.  
 > La clave del éxito no es la IA, es el **nurturing empático** + **compliance horario estricto** + **handoff determinista**.  
 > Si algo no encaja en este spec, pregunta: "¿Esto ayuda a mantener leads fuera de horas de forma compliant y medible?" antes de implementarlo.

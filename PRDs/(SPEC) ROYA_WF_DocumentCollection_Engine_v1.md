@@ -4,7 +4,7 @@
 **Versión:** 1.0  
 **Fecha:** 20 de febrero de 2026  
 **Estado:** Especificación para implementación  
-**Dominio:** ROYA / Document Collection Android  
+**Dominio:** cxEngine / Document Collection Android  
 **Stack referencia:** Agnóstico (n8n/Make/Zapier + LLM + SMS/WhatsApp + CRM + Storage)
 
 ---
@@ -18,7 +18,7 @@ Motor de automatización para la solicitud, seguimiento y validación de documen
 ```
 Trigger de Milestone → Document Request → Follow-up Loop → Validation → CRM Sync → Payment Trigger
                               ↓
-                    [ROYA Shared Components]
+                    [cxEngine Shared Components]
                     - Lead Schema v1
                     - ChannelAdapter
                     - ComplianceGuardrails
@@ -852,7 +852,7 @@ FUNCTION emit_doc_collection_metrics(request: DocumentRequest, event: ENUM, meta
 
 ## 7. Technical Specifications
 
-### 7.1 Contratos Extendidos (sobre ROYA Shared Components)
+### 7.1 Contratos Extendidos (sobre cxEngine Shared Components)
 
 #### DocumentRequest Schema
 ```json
@@ -1435,7 +1435,7 @@ notification_preferences:
 ---
 
 > **Nota final para el equipo:**  
-> Este SPEC define el cuarto Android de ROYA: el motor que convierte fricción documental en revenue automatizado, sin violar compliance ni perder momentum de venta.  
-> Cada componente debe reutilizar ROYA_Shared_Components_v1 — nada de duplicar lógica.  
+> Este SPEC define el cuarto Android de cxEngine: el motor que convierte fricción documental en revenue automatizado, sin violar compliance ni perder momentum de venta.  
+> Cada componente debe reutilizar cxEngine_Shared_Components_v1 — nada de duplicar lógica.  
 > La clave del éxito no es la IA, es la **validación estructural confiable** + **compliance documental estricto** + **trigger de payment determinista**.  
 > Si algo no encaja en este spec, pregunta: "¿Esto ayuda a recolectar documentos de forma compliant y medible?" antes de implementarlo.

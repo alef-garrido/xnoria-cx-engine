@@ -1,6 +1,6 @@
 # INTERFACE: ChannelAdapter_v1
 
-This interface defines the contract for communication channels (SMS, WhatsApp, Email) in the ROYA v1 system.
+This interface defines the contract for communication channels (SMS, WhatsApp, Email) in the cxEngine v1 system.
 
 ## METHODS
 
@@ -14,7 +14,7 @@ This interface defines the contract for communication channels (SMS, WhatsApp, E
     - `DeliveryResult`: Object with `status` (sent|queued|failed|blocked), `provider_message_id`, and `error` (optional).
 
 ### `parse_incoming(raw_payload: OBJECT) -> NormalizedMessage_v1`
-- **Description**: Normalizes an incoming webhook/event payload from the provider into the canonical ROYA message format.
+- **Description**: Normalizes an incoming webhook/event payload from the provider into the canonical cxEngine message format.
 - **Inputs**:
     - `raw_payload`: The raw JSON/Object from the provider (Twilio, Meta, etc.).
 - **Outputs**:
