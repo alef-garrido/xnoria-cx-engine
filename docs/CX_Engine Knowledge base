@@ -1,0 +1,53 @@
+ROYA v1 Knowledge Base
+This document serves as the central repository for summarized technical specifications of the ROYA v1 system.
+
+1. Core Engines & Components
+ROYA_Shared_Components_v1
+Purpose: Foundational schemas and interfaces for the entire ROYA system.
+Key Contracts:
+Lead_v1: Canonical schema for lead data (UUID, Phone, Status, Metadata).
+NormalizedMessage: Standard format for incoming/outgoing interactions.
+Interfaces:
+ChannelAdapter: Abstract communication (SMS, WhatsApp, Email).
+CRMAdapter: Abstract lead management (HighLevel, Salesforce).
+TraceEmitter / MetricsEmitter: Observability and analytics.
+Design Philosophy: Stateless, contract-first, and stack-agnostic.
+WF_WhatsApp_Decision_Engine_v1
+Purpose: Specific implementation for WhatsApp channel.
+Key Features: Message normalization, media handling (images/PTTs), session management, and rate limiting.
+WF_SleepingBeauty_DBR_Engine_v1
+Purpose: Reactivating dormant leads (DBR).
+Process: CSV Ingestion → "Prince Charming Kiss" → Qualification Conversation → Appointment.
+Metrics: 15%+ Response rate, 40%+ Qualification rate.
+WF_SpeedToLead_Engine_v1
+Purpose: Immediate response (<60s) to fresh leads.
+Process: Webhook Trigger → Normalization → Initial Acknowledgment → Routing.
+NFR: Sustained throughput of 500 leads/hour.
+WF_OutOfHours_Engine_v1
+Purpose: Managing leads received outside business hours.
+Process: Time Detection → Automated Nurturing → Sales Handoff (during work hours).
+WF_DocumentCollection_Engine_v1
+Purpose: Automated document requests and validation.
+Key Features: Milestone triggers, smart follow-ups (backoff), structural validation, payment milestone triggers.
+Target: Completion in ≤ 48 hours.
+2. Cross-Cutting Systems
+ROYA_Compliance_Guardrails_v1
+Purpose: Legal enforcement (TCPA, GDPR) across all engines.
+Controls: Explicit consent, opt-out management, frequency limits, PII masking in logs.
+ROYA_Analytics_Metrics_v1
+Purpose: Framework for measurement and ROI attribution.
+Reporting: Response/Qualification/Appointment rates, revenue attribution, cost per lead.
+Observability: Prometheus/Datadog ready metrics emission.
+3. Infrastructure & Deployment
+Environment Variable Standardization
+ROYA v1 uses a unified environment variable pattern across all engines to ensure security and portability.
+
+Pattern: $env.VARIABLE_NAME
+Critical Variables: WHATSAPP_PHONE_NUMBER_ID, META_LONG_LIVED_TOKEN, HUBSPOT_APP_TOKEN.
+Docker Architecture
+The system is optimized for containerized deployment via Docker Compose.
+
+Benefits: Environment isolation, unified credential injection, and high availability.
+Components: n8n container + Persistent Volumes (n8n_data).
+Configuration: 
+docker-compose.yml

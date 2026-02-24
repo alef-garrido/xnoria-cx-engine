@@ -1,8 +1,8 @@
 {
   "updatedAt": "2026-02-23T05:13:59.443Z",
   "createdAt": "2026-02-20T23:31:50.686Z",
-  "id": "y1ZwlqUYVjmR45dP",
-  "name": "WF_Email_Decision_Engine_v1_sync_final",
+  "id": "gDcGMPBTljpzwuqS",
+  "name": "cxEngine_WF_Email_Decision_Engine_v1",
   "description": null,
   "active": false,
   "isArchived": false,
@@ -373,7 +373,7 @@
       "name": "ComplianceCheck",
       "parameters": {
         "mode": "once",
-        "workflowId": "8wRPpZ3xnwvD2fmj"
+        "workflowId": "bitZo2xXZTixg08D"
       },
       "position": [
         1664,
@@ -387,7 +387,7 @@
       "name": "LogDecision",
       "parameters": {
         "mode": "once",
-        "workflowId": "1fAXwkLkftHAc1Wy"
+        "workflowId": "2fDEdMAcGDxxusMp"
       },
       "position": [
         1872,
@@ -733,7 +733,7 @@
       "updatedAt": "2026-02-20T23:31:50.712Z",
       "createdAt": "2026-02-20T23:31:50.712Z",
       "role": "workflow:owner",
-      "workflowId": "y1ZwlqUYVjmR45dP",
+      "workflowId": "gDcGMPBTljpzwuqS",
       "projectId": "71tFcDH72aEitFP0",
       "project": {
         "updatedAt": "2025-07-31T21:28:42.018Z",

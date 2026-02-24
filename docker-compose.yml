@@ -1,16 +1,16 @@
 services:
   n8n:
     image: n8nio/n8n:latest
-    container_name: n8n-cxEngine-engine
+    container_name: cx-engine-n8n
     restart: unless-stopped
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=${cxEngine_DOMAIN:-localhost}
+      - N8N_HOST=${CX_ENGINE_DOMAIN:-localhost}
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - NODE_ENV=production
-      - WEBHOOK_URL=http://${cxEngine_DOMAIN:-localhost}:5678/
+      - WEBHOOK_URL=http://${CX_ENGINE_DOMAIN:-localhost}:5678/
       - GENERIC_TIMEZONE=${TZ:-UTC}
       # Loading variables from the .env file
       - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}

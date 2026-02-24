@@ -1,8 +1,8 @@
 {
   "updatedAt": "2026-02-24T02:15:42.891Z",
   "createdAt": "2026-02-20T23:32:00.995Z",
-  "id": "pVe2i3ghiSd76D6P",
-  "name": "WF_WhatsApp_Decision_Engine_v1_sync_final",
+  "id": "IE4oP93LKcJcLv2O",
+  "name": "cxEngine_WF_WhatsApp_Decision_Engine_v1",
   "description": null,
   "active": false,
   "isArchived": false,
@@ -40,7 +40,7 @@
       "name": "LogInbound",
       "parameters": {
         "mode": "once",
-        "workflowId": "1fAXwkLkftHAc1Wy"
+        "workflowId": "2fDEdMAcGDxxusMp"
       },
       "position": [
         400,
@@ -69,7 +69,7 @@
       "name": "ComplianceCheck",
       "parameters": {
         "mode": "once",
-        "workflowId": "8wRPpZ3xnwvD2fmj"
+        "workflowId": "bitZo2xXZTixg08D"
       },
       "position": [
         704,
@@ -83,7 +83,7 @@
       "name": "LogDecision",
       "parameters": {
         "mode": "once",
-        "workflowId": "1fAXwkLkftHAc1Wy"
+        "workflowId": "2fDEdMAcGDxxusMp"
       },
       "position": [
         896,
@@ -228,7 +228,7 @@
       "updatedAt": "2026-02-20T23:32:01.033Z",
       "createdAt": "2026-02-20T23:32:01.033Z",
       "role": "workflow:owner",
-      "workflowId": "pVe2i3ghiSd76D6P",
+      "workflowId": "IE4oP93LKcJcLv2O",
       "projectId": "71tFcDH72aEitFP0",
       "project": {
         "updatedAt": "2025-07-31T21:28:42.018Z",

@@ -1,7 +1,7 @@
 {
   "updatedAt": "2026-02-24T02:07:39.749Z",
   "createdAt": "2026-02-23T05:53:26.356Z",
-  "id": "9NPCbbzsmWRlHmTZ",
+  "id": "BgKS1fB2FU9CtwTX",
   "name": "cxEngine_WF_SleepingBeauty_Ingestion_Engine_V1_Final",
   "description": null,
   "active": true,
@@ -92,7 +92,7 @@
           "__rl": true,
           "cachedResultName": "cxEngine_WF_Compliance_Guardrails_v1",
           "mode": "list",
-          "value": "8wRPpZ3xnwvD2fmj"
+          "value": "bitZo2xXZTixg08D"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -214,7 +214,7 @@
           "__rl": true,
           "cachedResultName": "cxEngine_Analytics_Metrics_v1",
           "mode": "list",
-          "value": "1fAXwkLkftHAc1Wy"
+          "value": "2fDEdMAcGDxxusMp"
         },
         "workflowInputs": {
           "mappingMode": "passThrough"
@@ -465,7 +465,7 @@
       "updatedAt": "2026-02-23T05:53:26.360Z",
       "createdAt": "2026-02-23T05:53:26.360Z",
       "role": "workflow:owner",
-      "workflowId": "9NPCbbzsmWRlHmTZ",
+      "workflowId": "BgKS1fB2FU9CtwTX",
       "projectId": "71tFcDH72aEitFP0",
       "project": {
         "updatedAt": "2025-07-31T21:28:42.018Z",
@@ -524,7 +524,7 @@
     "updatedAt": "2026-02-24T02:07:39.751Z",
     "createdAt": "2026-02-24T02:07:39.751Z",
     "versionId": "4725ce12-89d9-4382-b558-52422a125a16",
-    "workflowId": "9NPCbbzsmWRlHmTZ",
+    "workflowId": "BgKS1fB2FU9CtwTX",
     "nodes": [
       {
         "parameters": {
@@ -611,7 +611,7 @@
             "__rl": true,
             "cachedResultName": "cxEngine_WF_Compliance_Guardrails_v1",
             "mode": "list",
-            "value": "8wRPpZ3xnwvD2fmj"
+            "value": "bitZo2xXZTixg08D"
           },
           "workflowInputs": {
             "mappingMode": "defineBelow",
@@ -733,7 +733,7 @@
             "__rl": true,
             "cachedResultName": "cxEngine_Analytics_Metrics_v1",
             "mode": "list",
-            "value": "1fAXwkLkftHAc1Wy"
+            "value": "2fDEdMAcGDxxusMp"
           },
           "workflowInputs": {
             "mappingMode": "passThrough"
@@ -971,7 +971,7 @@
       {
         "createdAt": "2026-02-24T02:07:39.885Z",
         "id": 97,
-        "workflowId": "9NPCbbzsmWRlHmTZ",
+        "workflowId": "BgKS1fB2FU9CtwTX",
         "versionId": "4725ce12-89d9-4382-b558-52422a125a16",
         "event": "activated",
         "userId": "536f6c19-fd14-4a57-b85e-ff49981d7660"
