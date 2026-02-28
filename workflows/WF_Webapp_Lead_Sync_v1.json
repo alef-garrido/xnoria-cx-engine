@@ -1,0 +1,286 @@
+{
+  "name": "WF_Webapp_Lead_Sync_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "fresh-lead-ingested",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook_Trigger",
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "webhookId": "92f3cf89-bdb6-4113-a65b-f49ba442994f"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json.lead;\nconst errors = [];\nif (!input.email && !input.phone) errors.push('Missing email or phone');\nif (errors.length > 0) throw new Error('Invalid Lead: ' + errors.join(', '));\n\nreturn [{\n  json: {\n    lead_id: input.lead_id || `webapp-${Date.now()}`,\n    name: input.name || '',\n    email: input.email,\n    phone: input.phone || '',\n    source: input.source || 'webapp_landing',\n    status: 'new',\n    consent_verified: input.consent_verified !== false,\n    created_at: new Date().toISOString(),\n    schema_version: 'v1',\n    metadata: input.metadata || {}\n  }\n}];"
+      },
+      "id": "2",
+      "name": "NormalizeLead",
+      "position": [
+        208,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "authentication": "appToken",
+        "email": "={{ $json.email }}",
+        "additionalFields": {
+          "customPropertiesUi": {
+            "customPropertiesValues": [
+              {
+                "property": "cxEngine_status",
+                "value": "new"
+              },
+              {
+                "property": "cxEngine_source",
+                "value": "={{ $json.source }}"
+              },
+              {
+                "property": "cxEngine_trace_id",
+                "value": "={{ $('Webhook_Trigger').item.json.trace_id }}"
+              },
+              {
+                "property": "cxEngine_last_interaction",
+                "value": "={{ new Date().toISOString() }}"
+              }
+            ]
+          }
+        },
+        "options": {}
+      },
+      "id": "3",
+      "name": "HubSpotSync",
+      "position": [
+        400,
+        0
+      ],
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2,
+      "credentials": {
+        "hubspotAppToken": {
+          "id": "lKebO1ooj9gcGD8V",
+          "name": "HubSpot App Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "type",
+              "type": "string",
+              "value": "counter"
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "value": "stl_lead_ingested"
+            },
+            {
+              "name": "lead_id",
+              "type": "string",
+              "value": "={{ $json.lead_id }}"
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "value": "webapp_landing"
+            },
+            {
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Set_Metrics_Payload",
+      "position": [
+        608,
+        0
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "workflowId": "2fDEdMAcGDxxusMp",
+        "options": {}
+      },
+      "id": "5",
+      "name": "LogTrigger",
+      "position": [
+        800,
+        0
+      ],
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "response_id",
+              "type": "string",
+              "value": "={{ $execution.id }}"
+            },
+            {
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ new Date().toISOString() }}"
+            },
+            {
+              "name": "channel",
+              "type": "string",
+              "value": "webapp"
+            },
+            {
+              "name": "final_action.type",
+              "type": "string",
+              "value": "PROVIDE_INFO"
+            },
+            {
+              "name": "final_action.payload.message",
+              "type": "string",
+              "value": "Lead synced to HubSpot"
+            },
+            {
+              "name": "meta.version",
+              "type": "string",
+              "value": "v1"
+            },
+            {
+              "name": "meta.trace_id",
+              "type": "string",
+              "value": "={{ $('Webhook_Trigger').item.json.trace_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6",
+      "name": "Set_Final_Action_Wrapper",
+      "position": [
+        1008,
+        0
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "7",
+      "name": "Webhook_Response_Final",
+      "position": [
+        1200,
+        0
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "HubSpotSync": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Metrics_Payload",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "LogTrigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Set_Final_Action_Wrapper",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "NormalizeLead": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "HubSpotSync",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Final_Action_Wrapper": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Webhook_Response_Final",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Set_Metrics_Payload": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "LogTrigger",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Webhook_Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "NormalizeLead",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "852f6944-e26f-4db4-a544-4e08a2b88a18",
+  "meta": {
+    "instanceId": "ba99e7515fe618f59a2f4a1a3fc167db3ca635e0b2c9e767d44cea60951652ef"
+  },
+  "id": "BHGAB8HMKZsQ2TtL",
+  "tags": []
+}

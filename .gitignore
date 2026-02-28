@@ -60,3 +60,6 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+
+# HubSpot config file
+hubspot.config.yml
