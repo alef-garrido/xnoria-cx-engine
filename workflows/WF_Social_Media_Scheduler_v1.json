@@ -1,0 +1,267 @@
+{
+  "name": "WF_Social_Media_Scheduler_v1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hour",
+              "value": 1
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Centralized configuration for Social Media Posting\nreturn {\n  json: {\n    spreadsheetId: \"SPREADSHEET_ID_HERE\",\n    sheetName: \"ContentCalendar\",\n    timezone: \"America/Mexico_City\"\n  }\n};"
+      },
+      "id": "2",
+      "name": "ConfigLoader",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.sheetName }}",
+          "mode": "name"
+        },
+        "operation": "read",
+        "filtersUI": {
+          "conditions": [
+            {
+              "keyName": "Status",
+              "condition": "equal",
+              "value": "Scheduled"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Fetch Content",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        500,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "d8213760-494b-4890-8e1e-7b7c26cde46a",
+              "leftValue": "={{$json.Status}}",
+              "rightValue": "Scheduled",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4",
+      "name": "Filter Scheduled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "text": "={{$json.Content}}",
+        "postAs": "person",
+        "resource": "post"
+      },
+      "id": "5",
+      "name": "LinkedIn Post",
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        950,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "me/media",
+        "options": {},
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "caption",
+              "value": "={{ $node[\"Fetch Content\"].json.Content }}"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ $node[\"Fetch Content\"].json.ImageUrl }}"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "Instagram Post",
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        950,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.threads.net/v1.0/me/threads",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParametersUi": {
+          "parameter": [
+            {
+              "name": "text",
+              "value": "={{ $json.Content }}"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Threads Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        950,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $node[\"ConfigLoader\"].json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $node[\"ConfigLoader\"].json.sheetName }}",
+          "mode": "name"
+        },
+        "rowNumber": "={{ $json.rowNumber }}",
+        "columnsUi": {
+          "column": [
+            {
+              "columnName": "Status",
+              "value": "Posted"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Mark as Posted",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1250,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "ConfigLoader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ConfigLoader": {
+      "main": [
+        [
+          {
+            "node": "Fetch Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Content": {
+      "main": [
+        [
+          {
+            "node": "Filter Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Scheduled": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Instagram Post",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Threads Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Post": {
+      "main": [
+        [
+          {
+            "node": "Mark as Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
