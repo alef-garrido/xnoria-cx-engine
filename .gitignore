@@ -28,6 +28,7 @@ brain/
 audit/
 QA/
 .CX_Research/
+PRDs/
 
 # MCP specific
 cookies.txt
