@@ -27,6 +27,7 @@ brain/
 *.swo
 audit/
 QA/
+.CX_Research/
 
 # MCP specific
 cookies.txt
